@@ -32,7 +32,7 @@ def log_signal(text: str) -> None:
     """Print a signal in green and optionally append to log file."""
     print(f"{Fore.GREEN}{text}{Style.RESET_ALL}")
     if config.LOG_FILE:
-        with open(config.LOG_FILE, "a") as fh:
+        with open(config.LOG_FILE, "a", encoding="utf-8") as fh:
             fh.write(text + "\n\n")
 
 
