@@ -1,25 +1,23 @@
-# SMC Crypto Scanner — Admin / Tradeswein Logic
+# SMC Crypto Scanner — v2 Signal Engine
 
-A fully self-contained Python scanner that applies **Smart Money Concepts (SMC)**
-to live crypto market data and generates trade setups.
+A scanner + journal + evaluator + alerting system built on Smart Money Concepts.
+**Not an auto-trading bot.** Generates, stores, scores, and evaluates setups.
 
 ---
 
-## Strategy overview
+## What v2 adds over v1
 
-| Step | What it does |
-|------|-------------|
-| 1. Market context | Classifies trend as *bullish / bearish / range* via EMA + swing structure |
-| 2. Liquidity mapping | Marks swing highs, swing lows, equal highs, equal lows |
-| 3. Sweep detection | Detects wick-through-and-reject events that take resting orders |
-| 4. Structure break | Confirms BOS or MBOS after the sweep |
-| 5. Signal output | Generates entry zone, stop-loss, take-profit, and a plain-English reason |
-
-**Long setup**  
-Price sweeps below lows → closes back above → bullish BOS fires → go long.
-
-**Short setup**  
-Price sweeps above highs → closes back below → bearish BOS fires → go short.
+| Feature | v1 | v2 |
+|---|---|---|
+| Signal detection | ✅ | ✅ |
+| SQLite journal | ❌ | ✅ |
+| Signal lifecycle (won/lost/expired) | ❌ | ✅ |
+| Signal scoring 0-100 | ❌ | ✅ |
+| HTF alignment filter | ❌ | ✅ |
+| Volume confirmation | ❌ | ✅ |
+| Telegram alerts | ❌ | ✅ |
+| Deduplication / spam control | ❌ | ✅ |
+| MFE / MAE tracking | ❌ | ✅ |
 
 ---
 
@@ -27,14 +25,18 @@ Price sweeps above highs → closes back below → bearish BOS fires → go shor
 
 ```
 smc_scanner/
-├── main.py          — Entry point; CLI flags; scan loop
-├── config.py        — All tunable parameters
-├── datafeed.py      — CCXT OHLCV fetch layer
-├── structure.py     — Swing detection, trend, BOS/MBOS
-├── liquidity.py     — Liquidity zones, equal H/L, sweep detection
-├── signals.py       — Signal assembly (long / short)
-├── charting.py      — Plotly candlestick + annotation chart
-├── utils.py         — Logging, EMA, ATR, signal formatting
+├── main.py        — entry point + scan loop
+├── config.py      — all settings (exchange, DB, scoring, Telegram)
+├── datafeed.py    — CCXT OHLCV layer
+├── structure.py   — swing detection, trend, BOS/MBOS
+├── liquidity.py   — liquidity zones, sweeps
+├── signals.py     — signal assembly (entry/SL/TP)
+├── scoring.py     — 0-100 quality scoring
+├── journal.py     — SQLite persistence
+├── evaluator.py   — signal lifecycle tracking
+├── alerts.py      — Telegram delivery
+├── charting.py    — Plotly chart (optional)
+├── utils.py       — logging, EMA, ATR, formatting
 ├── requirements.txt
 └── README.md
 ```
@@ -43,131 +45,192 @@ smc_scanner/
 
 ## Installation
 
-### 1. Clone / copy the folder
-
-```bash
-cd smc_scanner
-```
-
-### 2. Create a virtual environment (recommended)
-
 ```bash
 python -m venv .venv
-# macOS / Linux
+# Linux/macOS
 source .venv/bin/activate
 # Windows
 .venv\Scripts\activate
-```
 
-### 3. Install dependencies
-
-```bash
 pip install -r requirements.txt
 ```
 
 ---
 
-## Running the scanner
-
-### One-shot scan (all symbols × timeframes in config.py)
+## How to run
 
 ```bash
+# One-shot scan
 python main.py
-```
 
-### Continuous loop
-
-```bash
+# Hourly loop
 python main.py --loop
-```
 
-### Single pair / timeframe
-
-```bash
+# Single pair / timeframe
 python main.py --symbol BTC/USDT --tf 15m
-```
 
-### Suppress Plotly chart popup
-
-```bash
+# No charts
 python main.py --no-chart
-```
 
-### All options combined
+# Show DB summary only
+python main.py --summary
 
-```bash
+# All options
 python main.py --symbol ETH/USDT --tf 1h --loop --no-chart
 ```
 
 ---
 
-## Sample output
+## Console output legend
 
 ```
-  ╔═══════════════════════════════════════════════╗
-  ║     SMC CRYPTO SCANNER  — Admin / Tradeswein  ║
-  ║   Liquidity · Structure · Sweep · BOS/MBOS    ║
-  ╚═══════════════════════════════════════════════╝
-
-  Symbol         TF       Context      Candles
-  --------------------------------------------------
-  BTC/USDT       15m      range        200
-  BTC/USDT       1h       bullish      200
-  ETH/USDT       15m      bearish      200
-  ETH/USDT       1h       range        200
-
-========================================================
-  SMC SIGNAL — 2024-11-14 09:42:11 UTC
-========================================================
-  Symbol     : BTC/USDT
-  Timeframe  : 15m
-  Context    : Range
-  Liq sweep  : Above highs (High @ 67280.0000)
-  Structure  : BEARISH BOS @ 66900.0000
-  Signal     : SHORT 🔴
-  Entry zone : 66900 – 67280
-  Stop Loss  : 67415
-  Take Profit: 66200
-  Reason     : Swept High @ 67280.0000, closed back below,
-               then BEARISH BOS @ 66900.0000 confirmed
-               → bearish continuation expected
-========================================================
+[DB]    — database operation
+[SCAN]  — market scanning
+[EVAL]  — open signal evaluation
+[SCORE] — scoring breakdown
+[ALERT] — Telegram alert sent
+[SKIP]  — duplicate alert suppressed
+[LOOP]  — scheduler info
 ```
 
 ---
 
-## Configuration reference (`config.py`)
+## Signal journal
 
-| Parameter | Default | Description |
-|-----------|---------|-------------|
-| `EXCHANGE` | `"binance"` | CCXT exchange id |
-| `SYMBOLS` | BTC/USDT, ETH/USDT … | Symbols to scan |
-| `TIMEFRAMES` | `["15m","1h"]` | Timeframes to scan |
-| `CANDLE_LIMIT` | `200` | Candles fetched per request |
-| `SWING_LOOKBACK` | `5` | Bars on each side to confirm a swing |
-| `BOS_THRESHOLD` | `0.001` | Min break size (0.10 %) to confirm BOS |
-| `EQH_EQL_TOLERANCE` | `0.0015` | Max delta to call two levels "equal" |
-| `SWEEP_WICK_FACTOR` | `0.5` | Min wick size relative to candle range |
-| `SWEEP_LOOKBACK` | `30` | Recent candles checked for sweeps |
-| `DEFAULT_SL_BUFFER` | `0.002` | Extra buffer beyond wick for stop |
-| `DEFAULT_RR_RATIO` | `2.0` | Minimum RR ratio for take-profit |
-| `TREND_EMA_FAST` | `21` | Fast EMA period for trend |
-| `TREND_EMA_SLOW` | `55` | Slow EMA period for trend |
-| `SCAN_INTERVAL_SECONDS` | `60` | Loop sleep time |
-| `SHOW_CHART` | `True` | Open Plotly chart on signal |
-| `LOG_FILE` | `"signals.log"` | File to append signals; `""` to disable |
+Every signal is stored in `signals.db` (SQLite) with a full lifecycle:
+
+| Field | Description |
+|---|---|
+| `status` | pending → triggered → won / lost / expired |
+| `score` | 0-100 quality rating |
+| `entry_hit` | whether price entered the zone |
+| `mfe` | max favorable excursion from entry |
+| `mae` | max adverse excursion from entry |
+| `expires_at` | auto-expiry timestamp |
+| `signal_hash` | dedup key |
+
+### Signal statuses
+
+| Status | Meaning |
+|---|---|
+| `pending` | waiting for price to reach entry zone |
+| `triggered` | price entered the zone |
+| `won` | take-profit was hit first |
+| `lost` | stop-loss was hit first |
+| `expired` | neither SL nor TP hit before expiry |
+| `cancelled` | manually cancelled (future use) |
 
 ---
 
-## No API key required
+## Signal evaluation
 
-The scanner uses **public market data** (no API key needed for Binance OHLCV).
-Leave `API_KEY` and `API_SECRET` empty in `config.py`.
+The evaluator runs at the start of every cycle and checks all open signals:
+
+1. Fetch fresh candles after the signal was created
+2. Walk candle-by-candle:
+   - If price enters the entry zone → mark `triggered`
+   - Track best/worst price for MFE / MAE
+   - If TP is hit first → `won`; if SL is hit first → `lost`
+   - If expires_at is reached without conclusion → `expired`
+
+### Ambiguity rule
+
+When both SL and TP fall within the same candle (rare):
+- **Long**: if close > mid_entry → TP assumed first (`won`), else `lost`
+- **Short**: if close < mid_entry → TP assumed first (`won`), else `lost`
+
+This conservative rule avoids inflating the win rate.
+
+---
+
+## Scoring
+
+Scores are computed by `scoring.py` immediately after a signal is detected:
+
+| Component | Points |
+|---|---|
+| Valid setup baseline | +40 |
+| RR >= 2.0 | +15 |
+| RR >= 2.5 | +20 (replaces +15) |
+| HTF bias aligned | +15 |
+| HTF bias opposing | -10 |
+| Volume spike confirmed | +10 |
+| Clear sweep candle (wick ≥ 70 %) | +10 |
+| Dead market (ATR very low) | -10 |
+| TP too close (< 1 % from entry) | -10 |
+| Duplicate in last N hours | -20 |
+
+Final score is clamped to **[0, 100]**.
+
+---
+
+## Higher timeframe alignment
+
+The HTF is determined by `config.HTF_MAP`:
+
+```python
+"15m" → "1h"
+"1h"  → "4h"
+"4h"  → "1d"
+```
+
+- If HTF context matches signal direction → +15 points
+- If HTF opposes → -10 points
+- If HTF is range or unavailable → neutral (0)
+
+---
+
+## Volume confirmation
+
+Controlled by `config.py`:
+
+```python
+ENABLE_VOLUME_CONFIRMATION = True
+VOLUME_LOOKBACK            = 20     # rolling average window
+VOLUME_SPIKE_MULTIPLIER    = 1.5    # must be 1.5× avg to qualify
+```
+
+Checks the last 2 candles (sweep + BOS area) against the rolling average.
+
+---
+
+## Telegram alerts
+
+1. Set in `config.py`:
+```python
+TELEGRAM_ENABLED   = True
+TELEGRAM_BOT_TOKEN = "your_token"
+TELEGRAM_CHAT_ID   = "your_chat_id"
+ALERT_SCORE_THRESHOLD = 60
+```
+
+2. Alerts are suppressed if:
+   - Score is below the threshold
+   - The same symbol/tf/direction was alerted within `DEDUP_LOOKBACK_HOURS`
+   - `alert_sent` flag is already set in the DB
+
+### Getting a Telegram bot token
+
+1. Open Telegram → search for `@BotFather`
+2. Send `/newbot` and follow prompts
+3. Copy the token into `TELEGRAM_BOT_TOKEN`
+4. Find your chat ID: send any message to the bot, then visit:
+   `https://api.telegram.org/bot<TOKEN>/getUpdates`
+5. Copy `message.chat.id` into `TELEGRAM_CHAT_ID`
+
+---
+
+## Limitations and assumptions
+
+- **No intra-candle order is known.** When both SL and TP are within one candle
+  the scanner uses the close price to decide outcome (see Ambiguity rule above).
+- **Exchange data is public.** No API key is required for Binance OHLCV.
+- **HTF fetch adds one extra API call per signal.** Rate-limited automatically.
+- **This is not financial advice.** Always apply your own risk management.
 
 ---
 
 ## Disclaimer
 
-This software is for **educational and research purposes only**.  
-It does **not** place orders or manage positions.  
-Always backtest and apply proper risk management before using any signal in live trading.
+Educational / research use only. Does not place orders. 
+Past signal performance does not guarantee future results.y proper risk management before using any signal in live trading.
