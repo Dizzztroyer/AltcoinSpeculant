@@ -1,27 +1,17 @@
 #!/usr/bin/env python3
 """
-main.py — SMC Scanner v2 entry point
-
-Each scan cycle:
-  1. init DB
-  2. evaluate old open signals
-  3. scan market for fresh signals
-  4. score each fresh signal
-  5. save to DB
-  6. send Telegram alert (if score qualifies)
-  7. print readable console summary
+main.py — SMC Scanner v2
 
 Usage:
-    python main.py                          # one-shot scan
-    python main.py --loop                   # hourly loop
+    python main.py                   # run once immediately
+    python main.py --loop            # hourly scheduler (aligned to clock)
     python main.py --symbol BTC/USDT --tf 15m
     python main.py --no-chart
-    python main.py --summary                # show DB summary only
+    python main.py --summary         # show DB status counts and exit
 """
 
 import argparse
 import sys
-import time
 
 import config
 import journal
@@ -29,8 +19,9 @@ import evaluator
 import scoring
 import alerts
 from charting import draw_chart
-from datafeed import fetch_all, fetch_ohlcv
+from datafeed import fetch_all
 from liquidity import build_liquidity_zones, detect_sweeps
+from scheduler import run_scheduler
 from signals import scan_for_signals
 from structure import find_swings, get_market_context
 from utils import format_signal, log_error, log_info, log_signal, log_warn
@@ -40,41 +31,63 @@ from utils import format_signal, log_error, log_info, log_signal, log_warn
 
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="SMC Scanner v2")
-    p.add_argument("--symbol",   default=None)
-    p.add_argument("--tf",       default=None)
-    p.add_argument("--loop",     action="store_true")
-    p.add_argument("--no-chart", action="store_true")
-    p.add_argument("--limit",    type=int, default=None)
-    p.add_argument("--summary",  action="store_true",
-                   help="Print DB signal summary and exit")
+    p.add_argument("--symbol",   default=None, help="Single symbol, e.g. BTC/USDT")
+    p.add_argument("--tf",       default=None, help="Single timeframe, e.g. 15m")
+    p.add_argument("--loop",     action="store_true", help="Hourly scheduler mode")
+    p.add_argument("--no-chart", action="store_true", help="Suppress Plotly charts")
+    p.add_argument("--limit",    type=int, default=None, help="Candle count override")
+    p.add_argument("--summary",  action="store_true", help="Print DB summary and exit")
     return p.parse_args()
 
 
-# ── Single scan pass ──────────────────────────────────────────────────────────
+# ── Context table (printed before each scan) ──────────────────────────────────
 
-def run_cycle(symbols: list[str],
-              timeframes: list[str],
-              show_chart: bool = False,
-              limit: int | None = None) -> int:
+def _print_context_table(symbols: list[str], timeframes: list[str]) -> None:
+    data = fetch_all(symbols=symbols, timeframes=timeframes)
+    print()
+    print(f"  {'Symbol':<14} {'TF':<8} {'Context':<12} Candles")
+    print("  " + "-" * 46)
+    for (sym, tf), df in data.items():
+        if df.empty:
+            continue
+        ctx = get_market_context(find_swings(df))
+        print(f"  {sym:<14} {tf:<8} {ctx:<12} {len(df)}")
+    print()
+
+
+# ── Core scan-evaluate-score-alert cycle ──────────────────────────────────────
+
+# These are set by main() before the scheduler starts,
+# so run_cycle() can be a plain zero-argument callable.
+_symbols:    list[str] = []
+_timeframes: list[str] = []
+_show_chart: bool      = False
+_limit:      int | None = None
+
+
+def run_cycle() -> None:
     """
-    Run one complete scan-evaluate-score-alert cycle.
-    Returns count of new signals generated.
+    One complete pass:
+      1. evaluate previously open signals
+      2. fetch fresh data + scan for new setups
+      3. score each setup
+      4. save to DB (dedup by hash)
+      5. send Telegram alerts for high-scoring signals
     """
 
-    # Step 1 — Evaluate previously open signals
+    # ── Step 1: evaluate open signals ────────────────────────────────────────
     evaluator.evaluate_open_signals()
 
-    # Step 2 — Fetch fresh data and scan
-    data = fetch_all(symbols=symbols, timeframes=timeframes)
-    new_signals_count = 0
+    # ── Step 2: fetch + scan ──────────────────────────────────────────────────
+    data = fetch_all(symbols=_symbols, timeframes=_timeframes)
 
     for (sym, tf), df in data.items():
         if df.empty:
             log_warn(f"[SCAN] skipping {sym} {tf}: empty data")
             continue
 
-        if limit:
-            df = df.tail(limit)
+        if _limit:
+            df = df.tail(_limit)
 
         log_info(f"[SCAN] {sym} [{tf}]  ({len(df)} candles)")
 
@@ -85,39 +98,39 @@ def run_cycle(symbols: list[str],
             continue
 
         if not raw_signals:
-            log_info(f"[SCAN]   no setup found")
+            log_info("[SCAN]   no setup found")
             continue
 
         for sig in raw_signals:
-            # Step 3 — Score
+
+            # ── Step 3: score ─────────────────────────────────────────────────
             try:
                 score, htf_bias = scoring.score_signal(sig, df)
             except Exception as exc:
                 log_warn(f"[SCORE] error: {exc}")
                 score, htf_bias = 40, ""
 
-            # Volume flag (for Telegram message)
-            vol_ok = scoring._volume_confirmed(df) if config.ENABLE_VOLUME_CONFIRMATION else False
+            vol_ok = (scoring._volume_confirmed(df)
+                      if config.ENABLE_VOLUME_CONFIRMATION else False)
 
-            # Step 4 — Save to DB
-            signal_id = journal.save_signal(sig, score=score, higher_tf_bias=htf_bias)
+            # ── Step 4: save ──────────────────────────────────────────────────
+            signal_id = journal.save_signal(sig, score=score,
+                                            higher_tf_bias=htf_bias)
             if signal_id is None:
-                log_info(f"[DB] duplicate signal ignored for {sym} {tf}")
+                log_info(f"[DB] duplicate signal ignored — {sym} {tf} "
+                         f"{sig['direction'].upper()}")
                 continue
 
-            new_signals_count += 1
             log_info(f"[DB] saved signal #{signal_id}  {sym} {tf} "
                      f"{sig['direction'].upper()}  score={score}")
 
-            # Step 5 — Print to console
-            text = format_signal(sig)
-            log_signal(text)
+            log_signal(format_signal(sig))
 
-            # Step 6 — Telegram alert
+            # ── Step 5: alert ─────────────────────────────────────────────────
             alerts.maybe_send_alert(signal_id, sig, score, htf_bias, vol_ok)
 
-            # Step 7 — Optional chart
-            if show_chart and config.SHOW_CHART:
+            # ── Optional chart ────────────────────────────────────────────────
+            if _show_chart and config.SHOW_CHART:
                 try:
                     df_s   = find_swings(df)
                     zones  = build_liquidity_zones(df_s)
@@ -126,26 +139,10 @@ def run_cycle(symbols: list[str],
                 except Exception as exc:
                     log_warn(f"[CHART] error: {exc}")
 
-    return new_signals_count
+    journal.print_summary()
 
 
-# ── Context summary ───────────────────────────────────────────────────────────
-
-def print_context_table(symbols: list[str], timeframes: list[str]) -> None:
-    data = fetch_all(symbols=symbols, timeframes=timeframes)
-    print()
-    print(f"  {'Symbol':<14} {'TF':<8} {'Context':<12} {'Candles'}")
-    print("  " + "-" * 48)
-    for (sym, tf), df in data.items():
-        if df.empty:
-            continue
-        df_s    = find_swings(df)
-        context = get_market_context(df_s)
-        print(f"  {sym:<14} {tf:<8} {context:<12} {len(df)}")
-    print()
-
-
-# ── Main ──────────────────────────────────────────────────────────────────────
+# ── Entry point ───────────────────────────────────────────────────────────────
 
 BANNER = r"""
   ╔══════════════════════════════════════════════════╗
@@ -154,16 +151,18 @@ BANNER = r"""
   ╚══════════════════════════════════════════════════╝
 """
 
+
 def main() -> None:
+    global _symbols, _timeframes, _show_chart, _limit
+
     args = parse_args()
 
-    symbols    = [args.symbol] if args.symbol else config.SYMBOLS
-    timeframes = [args.tf]     if args.tf     else config.TIMEFRAMES
-    show_chart = not args.no_chart
+    _symbols    = [args.symbol] if args.symbol else config.SYMBOLS
+    _timeframes = [args.tf]     if args.tf     else config.TIMEFRAMES
+    _show_chart = not args.no_chart
+    _limit      = args.limit
 
     print(BANNER)
-
-    # Always initialise the DB first
     journal.init_db()
 
     if args.summary:
@@ -171,33 +170,17 @@ def main() -> None:
         return
 
     if args.loop:
-        log_info(f"[LOOP] starting — interval={config.SCAN_INTERVAL_SECONDS}s")
-        iteration = 0
-        while True:
-            iteration += 1
-            log_info(f"\n{'─'*60}")
-            log_info(f"[LOOP] cycle #{iteration}")
-            log_info(f"{'─'*60}")
-            n = run_cycle(symbols, timeframes,
-                          show_chart=show_chart, limit=args.limit)
-            journal.print_summary()
-            log_info(f"[LOOP] new signals this cycle: {n} — "
-                     f"sleeping {config.SCAN_INTERVAL_SECONDS}s ...")
-            time.sleep(config.SCAN_INTERVAL_SECONDS)
+        log_info("[MAIN] starting hourly scheduler")
+        _print_context_table(_symbols, _timeframes)
+        run_scheduler(run_cycle, run_on_start=config.RUN_ON_START)
     else:
-        print_context_table(symbols, timeframes)
-        n = run_cycle(symbols, timeframes,
-                      show_chart=show_chart, limit=args.limit)
-        journal.print_summary()
-        if n == 0:
-            log_info("[SCAN] no trade setups detected this pass")
-        else:
-            log_info(f"[SCAN] total new signals: {n}")
+        _print_context_table(_symbols, _timeframes)
+        run_cycle()
 
 
 if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\nScanner stopped by user.")
+        print("\nScanner stopped.")
         sys.exit(0)

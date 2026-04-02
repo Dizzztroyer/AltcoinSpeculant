@@ -1,25 +1,28 @@
 # scoring.py — Signal quality scoring (0-100)
 #
+# v2 change: HTF confluence is now evaluated upstream in signals.py and
+# passed in via the signal dict (sig["htf_bias"], sig["htf_aligned"], etc.).
+# scoring.py reads those fields directly — no extra API call here.
+#
 # Scoring table:
-#   +40  valid setup baseline (sweep + BOS confirmed)
+#   +40  valid setup baseline
 #   +15  RR >= MIN_RR_FOR_BONUS
-#   + 5  RR >= STRONG_RR_BONUS (additional)
-#   +15  HTF bias aligned with signal direction
-#   +10  volume spike on sweep or BOS candle
-#   +10  clear sweep (wick covers >= 70 % of candle range)
-#   -10  flat / dead market (very low ATR)
-#   -10  target too close to entry (< 1 % distance)
+#   +20  RR >= STRONG_RR_BONUS  (replaces +15)
+#   +15  HTF aligned with signal direction
+#   - 0  HTF neutral (range) — no bonus, no penalty
+#   -10  HTF opposing  (only reached when HTF_FILTER_STRICT=False)
+#   +10  volume spike on recent candles
+#   +10  clear sweep candle (wick >= 70 % of range)
+#   -10  dead market (ATR very low relative to price)
+#   -10  TP too close to entry (< 1 %)
 #   -20  duplicate signal in DEDUP_LOOKBACK_HOURS window
 #
-# Final score is clamped to [0, 100].
+# Score clamped to [0, 100].
 
-import numpy as np
 import pandas as pd
 
 import config
 import journal
-from datafeed import fetch_ohlcv
-from structure import get_market_context, find_swings
 from utils import atr, log_info
 
 
@@ -31,17 +34,17 @@ def score_signal(sig: dict, df: pd.DataFrame) -> tuple[int, str]:
 
     Parameters
     ----------
-    sig : dict   — signal from signals.scan_for_signals()
-    df  : DataFrame — the OHLCV data the signal was generated from
+    sig : dict        — from signals.scan_for_signals(); must contain htf_* keys
+    df  : DataFrame   — OHLCV data the signal was generated from
 
     Returns
     -------
-    (score: int, higher_tf_bias: str)
+    (score: int, htf_bias: str)
     """
     points  = 0
     reasons = []
 
-    # ── Baseline: setup is structurally valid ─────────────────────────────────
+    # ── Baseline ──────────────────────────────────────────────────────────────
     points += 40
     reasons.append("+40 valid setup")
 
@@ -61,30 +64,34 @@ def score_signal(sig: dict, df: pd.DataFrame) -> tuple[int, str]:
     else:
         reasons.append(" 0  invalid risk (zero)")
 
-    # ── Higher timeframe alignment ────────────────────────────────────────────
-    htf_bias = _get_htf_bias(sig["symbol"], sig["timeframe"])
-    if htf_bias:
-        if _bias_aligns(sig["direction"], htf_bias):
-            points += 15
-            reasons.append(f"+15 HTF ({htf_bias}) aligned")
-        else:
-            points -= 10
-            reasons.append(f"-10 HTF ({htf_bias}) opposing")
+    # ── HTF confluence (pre-computed in signals.py — no extra API call) ───────
+    htf_bias     = sig.get("htf_bias", "")
+    htf_aligned  = sig.get("htf_aligned", False)
+    htf_opposing = sig.get("htf_opposing", False)
+
+    if htf_bias == "":
+        reasons.append(" 0  HTF data unavailable")
+    elif htf_aligned:
+        points += 15
+        reasons.append(f"+15 HTF {sig.get('htf_tf','')} aligned ({htf_bias})")
+    elif htf_opposing:
+        # Only reachable when HTF_FILTER_STRICT=False (strict mode blocks the signal)
+        points -= 10
+        reasons.append(f"-10 HTF {sig.get('htf_tf','')} opposing ({htf_bias})")
     else:
-        reasons.append(" 0  HTF bias unavailable")
+        # neutral / range
+        reasons.append(f" 0  HTF {sig.get('htf_tf','')} neutral ({htf_bias})")
 
     # ── Volume confirmation ────────────────────────────────────────────────────
     if config.ENABLE_VOLUME_CONFIRMATION:
-        vol_ok = _volume_confirmed(df)
-        if vol_ok:
+        if _volume_confirmed(df):
             points += 10
             reasons.append("+10 volume spike confirmed")
         else:
             reasons.append(" 0  no volume spike")
 
     # ── Sweep clarity ─────────────────────────────────────────────────────────
-    sweep_clear = _sweep_is_clear(df)
-    if sweep_clear:
+    if _sweep_is_clear(df):
         points += 10
         reasons.append("+10 clear sweep rejection")
     else:
@@ -100,90 +107,54 @@ def score_signal(sig: dict, df: pd.DataFrame) -> tuple[int, str]:
     tp_dist = abs(sig["tp"] - mid_entry) / mid_entry if mid_entry else 0
     if tp_dist < 0.01:
         points -= 10
-        reasons.append("-10 TP too close to entry (< 1 %)")
+        reasons.append("-10 TP too close (< 1 %)")
 
     # ── Deduplication penalty ─────────────────────────────────────────────────
     recent = journal.get_recent_signals(
         sig["symbol"], sig["timeframe"], sig["direction"],
-        config.DEDUP_LOOKBACK_HOURS
+        config.DEDUP_LOOKBACK_HOURS,
     )
     if recent:
         points -= 20
-        reasons.append(f"-20 duplicate (seen {len(recent)}x in last {config.DEDUP_LOOKBACK_HOURS}h)")
+        reasons.append(f"-20 duplicate ({len(recent)}x in last {config.DEDUP_LOOKBACK_HOURS}h)")
 
-    # ── Clamp ─────────────────────────────────────────────────────────────────
+    # ── Clamp & log ───────────────────────────────────────────────────────────
     score = max(0, min(100, points))
-    log_info(f"[SCORE] {sig['symbol']} {sig['timeframe']} {sig['direction'].upper()} "
-             f"→ {score}/100  |  " + "  ".join(reasons))
+    log_info(
+        f"[SCORE] {sig['symbol']} {sig['timeframe']} {sig['direction'].upper()} "
+        f"→ {score}/100  |  " + "  ".join(reasons)
+    )
 
-    return score, htf_bias or ""
-
-
-# ── Internal helpers ──────────────────────────────────────────────────────────
-
-def _get_htf_bias(symbol: str, timeframe: str) -> str:
-    """Fetch the higher timeframe and return 'bullish', 'bearish', or 'range'."""
-    htf = config.HTF_MAP.get(timeframe)
-    if not htf:
-        return ""
-    try:
-        df_htf = fetch_ohlcv(symbol, htf, limit=100)
-        if df_htf.empty:
-            return ""
-        df_htf = find_swings(df_htf)
-        return get_market_context(df_htf)
-    except Exception:
-        return ""
+    return score, htf_bias
 
 
-def _bias_aligns(direction: str, bias: str) -> bool:
-    """True if the signal direction matches the HTF bias."""
-    if direction == "long"  and bias == "bullish":
-        return True
-    if direction == "short" and bias == "bearish":
-        return True
-    # Range context is considered neutral — slight positive for the signal direction
-    if bias == "range":
-        return True   # neutral → no penalty, no bonus → handled by returning True
-    return False
-
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _volume_confirmed(df: pd.DataFrame) -> bool:
-    """
-    Check whether the last few candles show a volume spike vs rolling average.
-    Uses the most recent config.VOLUME_LOOKBACK bars.
-    """
+    """Volume spike on either of the last 2 candles vs rolling average."""
     if "volume" not in df.columns or len(df) < config.VOLUME_LOOKBACK + 2:
         return False
     avg_vol   = df["volume"].iloc[-(config.VOLUME_LOOKBACK + 1):-1].mean()
-    last_vol  = df["volume"].iloc[-1]
-    prev_vol  = df["volume"].iloc[-2]
     threshold = avg_vol * config.VOLUME_SPIKE_MULTIPLIER
-    return last_vol >= threshold or prev_vol >= threshold
+    return (df["volume"].iloc[-1] >= threshold or
+            df["volume"].iloc[-2] >= threshold)
 
 
 def _sweep_is_clear(df: pd.DataFrame) -> bool:
-    """
-    A sweep candle is 'clear' when its wick covers >= 70 % of the full range.
-    We look at the last 5 candles for such a candle.
-    """
-    recent = df.tail(5)
-    for _, row in recent.iterrows():
+    """Wick-dominant candle (wick >= 70 % of range) in last 5 bars."""
+    for _, row in df.tail(5).iterrows():
         c_range = row["high"] - row["low"]
         if c_range == 0:
             continue
-        body    = abs(row["close"] - row["open"])
-        wick    = c_range - body
-        if wick / c_range >= 0.70:
+        body = abs(row["close"] - row["open"])
+        if (c_range - body) / c_range >= 0.70:
             return True
     return False
 
 
 def _get_atr(df: pd.DataFrame) -> float | None:
-    """Return the last ATR(14) value."""
     try:
-        from utils import atr as compute_atr
-        a = compute_atr(df, 14)
-        return a.iloc[-1] if not a.empty else None
+        a = atr(df, 14)
+        return float(a.iloc[-1]) if not a.empty else None
     except Exception:
         return None

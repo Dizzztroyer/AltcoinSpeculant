@@ -178,3 +178,99 @@ def get_last_bos(df: pd.DataFrame) -> BOSEvent | None:
     if not events:
         return None
     return max(events, key=lambda e: e.candle_idx)
+
+
+# ── Multi-timeframe confluence ─────────────────────────────────────────────────
+
+class HTFConfluence:
+    """
+    Result of a higher-timeframe analysis for a given signal direction.
+
+    Attributes
+    ----------
+    bias     : 'bullish' | 'bearish' | 'range'
+    aligned  : True if HTF bias matches signal direction
+    opposing : True if HTF bias directly opposes signal direction
+    htf_tf   : which timeframe was consulted (e.g. '1h', '4h')
+    reason   : short human-readable explanation
+    """
+
+    def __init__(self, bias: str, aligned: bool, opposing: bool,
+                 htf_tf: str, reason: str):
+        self.bias     = bias
+        self.aligned  = aligned
+        self.opposing = opposing
+        self.htf_tf   = htf_tf
+        self.reason   = reason
+
+    def __repr__(self) -> str:
+        flag = "ALIGNED" if self.aligned else ("OPPOSING" if self.opposing else "NEUTRAL")
+        return f"<HTFConfluence {self.htf_tf} {self.bias.upper()} {flag}>"
+
+
+def get_htf_confluence(symbol: str,
+                       signal_direction: str,
+                       signal_timeframe: str,
+                       htf_map: dict | None = None) -> "HTFConfluence | None":
+    """
+    Fetch the higher timeframe for the given signal and evaluate alignment.
+
+    Parameters
+    ----------
+    symbol            : e.g. 'BTC/USDT'
+    signal_direction  : 'long' or 'short'
+    signal_timeframe  : e.g. '15m'
+    htf_map           : override config.HTF_MAP (optional)
+
+    Returns
+    -------
+    HTFConfluence object, or None if HTF data is unavailable.
+
+    Alignment rules
+    ---------------
+    • signal=long  + HTF=bullish → aligned   (green light)
+    • signal=short + HTF=bearish → aligned   (green light)
+    • signal=long  + HTF=bearish → opposing  (blocked when HTF_FILTER_STRICT=True)
+    • signal=short + HTF=bullish → opposing  (blocked when HTF_FILTER_STRICT=True)
+    • HTF=range                  → neutral   (no bonus, no block)
+    """
+    # Imported here to avoid circular imports at module level
+    from datafeed import fetch_ohlcv
+
+    mapping = htf_map or config.HTF_MAP
+    htf_tf  = mapping.get(signal_timeframe)
+
+    if not htf_tf:
+        return None
+
+    try:
+        df_htf = fetch_ohlcv(symbol, htf_tf, limit=150)
+        if df_htf.empty:
+            return None
+    except Exception:
+        return None
+
+    df_htf = find_swings(df_htf)
+    bias   = get_market_context(df_htf)
+
+    if signal_direction == "long":
+        aligned  = bias == "bullish"
+        opposing = bias == "bearish"
+    else:
+        aligned  = bias == "bearish"
+        opposing = bias == "bullish"
+
+    if aligned:
+        reason = f"HTF {htf_tf} is {bias} — confirms {signal_direction} bias"
+    elif opposing:
+        reason = f"HTF {htf_tf} is {bias} — OPPOSES {signal_direction} signal"
+    else:
+        reason = f"HTF {htf_tf} is range — neutral"
+
+    return HTFConfluence(
+        bias=bias,
+        aligned=aligned,
+        opposing=opposing,
+        htf_tf=htf_tf,
+        reason=reason,
+    )
