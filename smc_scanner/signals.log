@@ -103,3 +103,93 @@
   Reason     : Swept High @ 2158.0000, closed back below, then BEARISH BOS @ 2108.7200 confirmed → bearish continuation expected
 ========================================================
 
+========================================================
+  SMC SIGNAL — 2026-04-02 14:23:54 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 15m
+  Context    : Bearish
+  Liq sweep  : Below lows (equal low)
+  Structure  : BULLISH MBOS @ 66248.5100
+  Signal     : LONG 🟢
+  Entry zone : 65866.7 – 66248.51
+  Stop Loss  : 65580.7
+  Take Profit: 67011.42
+  Reason     : Swept Equal Low @ 65765.3800, closed back above, then BULLISH MBOS @ 66248.5100 confirmed → bullish continuation expected
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-02 15:00:58 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 15m
+  Context    : Bearish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 66516.0600
+  Signal     : LONG 🟢
+  Entry zone : 66516.06 – 66868.18
+  Stop Loss  : 66538.36
+  Take Profit: 66999.65
+  Reason     : Swept Low @ 66704.0000, closed back above, then BULLISH BOS @ 66516.0600 confirmed → bullish continuation expected
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-02 15:01:00 UTC
+========================================================
+  Symbol     : ETH/USDT
+  Timeframe  : 15m
+  Context    : Bearish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 2056.7600
+  Signal     : LONG 🟢
+  Entry zone : 2056.76 – 2063.82
+  Stop Loss  : 2052.55
+  Take Profit: 2075.78
+  Reason     : Swept Low @ 2062.9400, closed back above, then BULLISH BOS @ 2056.7600 confirmed → bullish continuation expected
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-02 15:01:05 UTC
+========================================================
+  Symbol     : ETH/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH MBOS @ 2056.7600
+  Signal     : LONG 🟢
+  Entry zone : 2038.81 – 2056.76
+  Stop Loss  : 2013.01
+  Take Profit: 2117.34
+  Reason     : Swept Low @ 2023.0400, closed back above, then BULLISH MBOS @ 2056.7600 confirmed → bullish continuation expected
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-02 17:01:16 UTC
+========================================================
+  Symbol     : ETH/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH MBOS @ 2056.7600
+  Signal     : LONG 🟢
+  Entry zone : 2056.76 – 2063.31
+  Stop Loss  : 2048.41
+  Take Profit: 2083.28
+  Reason     : Swept Low @ 2061.6000, closed back above, then BULLISH MBOS @ 2056.7600 confirmed → bullish continuation expected
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-02 17:40:52 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 15m
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 67104.8600
+  Signal     : LONG 🟢
+  Entry zone : 67104.86 – 67169.55
+  Stop Loss  : 66729.2
+  Take Profit: 67953.21
+  Reason     : Swept Low @ 67088.7300, closed back above, then BULLISH BOS @ 67104.8600 confirmed → bullish continuation expected
+========================================================
+

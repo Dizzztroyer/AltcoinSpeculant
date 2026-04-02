@@ -4,7 +4,7 @@ main.py — SMC Scanner v2
 
 Usage:
     python main.py                   # run once immediately
-    python main.py --loop            # hourly scheduler (aligned to clock)
+    python main.py --loop            # hourly scheduler aligned to clock
     python main.py --symbol BTC/USDT --tf 15m
     python main.py --no-chart
     python main.py --summary         # show DB status counts and exit
@@ -27,22 +27,18 @@ from structure import find_swings, get_market_context
 from utils import format_signal, log_error, log_info, log_signal, log_warn
 
 
-# ── CLI ───────────────────────────────────────────────────────────────────────
-
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="SMC Scanner v2")
-    p.add_argument("--symbol",   default=None, help="Single symbol, e.g. BTC/USDT")
-    p.add_argument("--tf",       default=None, help="Single timeframe, e.g. 15m")
-    p.add_argument("--loop",     action="store_true", help="Hourly scheduler mode")
-    p.add_argument("--no-chart", action="store_true", help="Suppress Plotly charts")
-    p.add_argument("--limit",    type=int, default=None, help="Candle count override")
-    p.add_argument("--summary",  action="store_true", help="Print DB summary and exit")
+    p.add_argument("--symbol",   default=None)
+    p.add_argument("--tf",       default=None)
+    p.add_argument("--loop",     action="store_true")
+    p.add_argument("--no-chart", action="store_true")
+    p.add_argument("--limit",    type=int, default=None)
+    p.add_argument("--summary",  action="store_true")
     return p.parse_args()
 
 
-# ── Context table (printed before each scan) ──────────────────────────────────
-
-def _print_context_table(symbols: list[str], timeframes: list[str]) -> None:
+def _print_context_table(symbols, timeframes):
     data = fetch_all(symbols=symbols, timeframes=timeframes)
     print()
     print(f"  {'Symbol':<14} {'TF':<8} {'Context':<12} Candles")
@@ -50,42 +46,31 @@ def _print_context_table(symbols: list[str], timeframes: list[str]) -> None:
     for (sym, tf), df in data.items():
         if df.empty:
             continue
-        ctx = get_market_context(find_swings(df))
-        print(f"  {sym:<14} {tf:<8} {ctx:<12} {len(df)}")
+        print(f"  {sym:<14} {tf:<8} "
+              f"{get_market_context(find_swings(df)):<12} {len(df)}")
     print()
 
 
-# ── Core scan-evaluate-score-alert cycle ──────────────────────────────────────
-
-# These are set by main() before the scheduler starts,
-# so run_cycle() can be a plain zero-argument callable.
-_symbols:    list[str] = []
-_timeframes: list[str] = []
-_show_chart: bool      = False
+# ── Globals set by main() before scheduler starts ─────────────────────────────
+_symbols:    list[str]  = []
+_timeframes: list[str]  = []
+_show_chart: bool       = False
 _limit:      int | None = None
 
 
 def run_cycle() -> None:
-    """
-    One complete pass:
-      1. evaluate previously open signals
-      2. fetch fresh data + scan for new setups
-      3. score each setup
-      4. save to DB (dedup by hash)
-      5. send Telegram alerts for high-scoring signals
-    """
+    """One complete evaluate → scan → score → save → alert pass."""
 
-    # ── Step 1: evaluate open signals ────────────────────────────────────────
+    # Step 1 — evaluate previously open signals
     evaluator.evaluate_open_signals()
 
-    # ── Step 2: fetch + scan ──────────────────────────────────────────────────
+    # Step 2 — fetch + scan
     data = fetch_all(symbols=_symbols, timeframes=_timeframes)
 
     for (sym, tf), df in data.items():
         if df.empty:
             log_warn(f"[SCAN] skipping {sym} {tf}: empty data")
             continue
-
         if _limit:
             df = df.tail(_limit)
 
@@ -103,7 +88,7 @@ def run_cycle() -> None:
 
         for sig in raw_signals:
 
-            # ── Step 3: score ─────────────────────────────────────────────────
+            # Step 3 — score
             try:
                 score, htf_bias = scoring.score_signal(sig, df)
             except Exception as exc:
@@ -113,36 +98,36 @@ def run_cycle() -> None:
             vol_ok = (scoring._volume_confirmed(df)
                       if config.ENABLE_VOLUME_CONFIRMATION else False)
 
-            # ── Step 4: save ──────────────────────────────────────────────────
+            # Step 4 — save
             signal_id = journal.save_signal(sig, score=score,
                                             higher_tf_bias=htf_bias)
             if signal_id is None:
-                log_info(f"[DB] duplicate signal ignored — {sym} {tf} "
-                         f"{sig['direction'].upper()}")
+                log_info(f"[DB] duplicate — {sym} {tf} {sig['direction'].upper()}")
                 continue
 
-            log_info(f"[DB] saved signal #{signal_id}  {sym} {tf} "
+            log_info(f"[DB] saved #{signal_id}  {sym} {tf} "
                      f"{sig['direction'].upper()}  score={score}")
-
             log_signal(format_signal(sig))
 
-            # ── Step 5: alert ─────────────────────────────────────────────────
-            alerts.maybe_send_alert(signal_id, sig, score, htf_bias, vol_ok)
+            # Step 5 — alert (pass df/zones/sweeps for chart image)
+            df_s   = find_swings(df)
+            zones  = build_liquidity_zones(df_s)
+            sweeps = detect_sweeps(df_s, zones)
 
-            # ── Optional chart ────────────────────────────────────────────────
+            alerts.maybe_send_alert(
+                signal_id, sig, score, htf_bias, vol_ok,
+                df=df_s, zones=zones, sweeps=sweeps,
+            )
+
+            # Step 6 — optional interactive chart
             if _show_chart and config.SHOW_CHART:
                 try:
-                    df_s   = find_swings(df)
-                    zones  = build_liquidity_zones(df_s)
-                    sweeps = detect_sweeps(df_s, zones)
                     draw_chart(df_s, sym, tf, zones, sweeps, sig)
                 except Exception as exc:
                     log_warn(f"[CHART] error: {exc}")
 
     journal.print_summary()
 
-
-# ── Entry point ───────────────────────────────────────────────────────────────
 
 BANNER = r"""
   ╔══════════════════════════════════════════════════╗
@@ -156,7 +141,6 @@ def main() -> None:
     global _symbols, _timeframes, _show_chart, _limit
 
     args = parse_args()
-
     _symbols    = [args.symbol] if args.symbol else config.SYMBOLS
     _timeframes = [args.tf]     if args.tf     else config.TIMEFRAMES
     _show_chart = not args.no_chart
