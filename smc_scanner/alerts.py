@@ -25,7 +25,8 @@ from utils import log_info, log_warn
 
 def maybe_send_alert(signal_id: int, sig: dict, score: int,
                      htf_bias: str, vol_confirmed: bool,
-                     df=None, zones=None, sweeps=None) -> None:
+                     df=None, zones=None, sweeps=None,
+                     obs=None, fvgs=None) -> None:
     """
     Send a Telegram alert for a fresh signal.
 
@@ -66,7 +67,8 @@ def maybe_send_alert(signal_id: int, sig: dict, score: int,
         try:
             from charting import render_chart_image
             image_path = render_chart_image(df, sig["symbol"], sig["timeframe"],
-                                            zones, sweeps, sig)
+                                            zones, sweeps, sig,
+                                            obs=obs, fvgs=fvgs)
         except Exception as exc:
             log_warn(f"[CHART] render failed: {exc}")
 

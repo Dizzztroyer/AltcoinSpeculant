@@ -193,3 +193,63 @@
   Reason     : Swept Low @ 67088.7300, closed back above, then BULLISH BOS @ 67104.8600 confirmed → bullish continuation expected
 ========================================================
 
+========================================================
+  SMC SIGNAL — 2026-04-02 18:00:16 UTC
+========================================================
+  Symbol     : ETH/USDT
+  Timeframe  : 15m
+  Context    : Range
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH MBOS @ 2055.6400
+  Signal     : SHORT 🔴
+  Entry zone : 2055.64 – 2067.8
+  Stop Loss  : 2081.8
+  Take Profit: 2021.57
+  Reason     : Swept Equal High @ 2069.7550, closed back below, then BEARISH MBOS @ 2055.6400 confirmed → bearish continuation expected
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-02 18:00:20 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 15m
+  Context    : Range
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH MBOS @ 78.9300
+  Signal     : SHORT 🔴
+  Entry zone : 78.93 – 79.62
+  Stop Loss  : 80.04
+  Take Profit: 77.75
+  Reason     : Swept Equal High @ 79.7000, closed back below, then BEARISH MBOS @ 78.9300 confirmed → bearish continuation expected
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-02 20:00:12 UTC
+========================================================
+  Symbol     : ETH/USDT
+  Timeframe  : 15m
+  Context    : Bullish
+  Liq sweep  : Below lows (equal low)
+  Structure  : BULLISH MBOS @ 2063.0000
+  Signal     : LONG 🟢
+  Entry zone : 2047.31 – 2063.0
+  Stop Loss  : 2039.56
+  Take Profit: 2086.34
+  Reason     : Swept Equal Low @ 2043.8900, closed back above, then BULLISH MBOS @ 2063.0000 confirmed → bullish continuation expected
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-03 02:00:15 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 15m
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 79.3700
+  Signal     : LONG 🟢
+  Entry zone : 79.02 – 79.37
+  Stop Loss  : 78.71
+  Take Profit: 80.16
+  Reason     : Swept Low @ 78.9600, closed back above, then BULLISH BOS @ 79.3700 confirmed → bullish continuation expected
+========================================================
+

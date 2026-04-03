@@ -1,6 +1,5 @@
-# charting.py — Plotly chart: interactive display + PNG export for Telegram
+# charting.py — Plotly chart: candles + OB boxes + FVG bands + signal levels
 
-import os
 import tempfile
 from pathlib import Path
 
@@ -12,21 +11,20 @@ from liquidity import LiquidityZone, SweepEvent
 from structure import find_swings
 
 
-# ── Internal figure builder (shared by both display and export) ────────────────
-
 def _build_figure(df: pd.DataFrame,
                   symbol: str,
                   timeframe: str,
                   zones: list[LiquidityZone],
                   sweeps: list[SweepEvent],
-                  signal: dict | None = None) -> go.Figure:
+                  signal: dict | None = None,
+                  obs=None,
+                  fvgs=None) -> go.Figure:
 
     df_s = find_swings(df)
+    fig  = make_subplots(rows=2, cols=1, row_heights=[0.8, 0.2],
+                         shared_xaxes=True, vertical_spacing=0.02)
 
-    fig = make_subplots(rows=2, cols=1, row_heights=[0.8, 0.2],
-                        shared_xaxes=True, vertical_spacing=0.02)
-
-    # ── Candlestick ────────────────────────────────────────────────────────────
+    # ── Candlestick ───────────────────────────────────────────────────────────
     fig.add_trace(go.Candlestick(
         x=df_s["timestamp"],
         open=df_s["open"], high=df_s["high"],
@@ -36,14 +34,12 @@ def _build_figure(df: pd.DataFrame,
         decreasing_line_color="#e63946",
     ), row=1, col=1)
 
-    # ── Volume bars ───────────────────────────────────────────────────────────
-    vol_colors = [
-        "#00b386" if c >= o else "#e63946"
-        for c, o in zip(df_s["close"], df_s["open"])
-    ]
+    # ── Volume ────────────────────────────────────────────────────────────────
+    vol_colors = ["#00b386" if c >= o else "#e63946"
+                  for c, o in zip(df_s["close"], df_s["open"])]
     fig.add_trace(go.Bar(
         x=df_s["timestamp"], y=df_s["volume"],
-        marker_color=vol_colors, opacity=0.6, name="Volume",
+        marker_color=vol_colors, opacity=0.5, name="Volume",
     ), row=2, col=1)
 
     # ── Swing highs / lows ────────────────────────────────────────────────────
@@ -61,44 +57,109 @@ def _build_figure(df: pd.DataFrame,
         name="Swing Low",
     ), row=1, col=1)
 
-    # ── Liquidity zones ───────────────────────────────────────────────────────
-    color_map = {
+    # ── Liquidity zone lines ──────────────────────────────────────────────────
+    liq_colors = {
         "high":       "rgba(255,80,80,0.50)",
         "low":        "rgba(80,200,80,0.50)",
         "equal_high": "rgba(255,160,0,0.65)",
         "equal_low":  "rgba(0,210,210,0.65)",
     }
-    for zone in zones[-20:]:
+    for zone in zones[-15:]:
         if zone.candle_idx not in df_s.index:
             continue
-        t_start = df_s.loc[zone.candle_idx, "timestamp"]
-        t_end   = df_s["timestamp"].iloc[-1]
-        col     = color_map.get(zone.zone_type, "white")
-        dash    = "dot" if "equal" in zone.zone_type else "dash"
-        fig.add_shape(
-            type="line", x0=t_start, x1=t_end,
-            y0=zone.level, y1=zone.level,
-            line=dict(color=col, width=1.5, dash=dash),
-            row=1, col=1,
-        )
-        fig.add_annotation(
-            x=t_end, y=zone.level, text=zone.label(),
-            showarrow=False, font=dict(size=9, color=col),
-            xanchor="right", row=1, col=1,
-        )
+        t0  = df_s.loc[zone.candle_idx, "timestamp"]
+        t1  = df_s["timestamp"].iloc[-1]
+        col = liq_colors.get(zone.zone_type, "white")
+        fig.add_shape(type="line", x0=t0, x1=t1,
+                      y0=zone.level, y1=zone.level,
+                      line=dict(color=col, width=1.2,
+                                dash="dot" if "equal" in zone.zone_type else "dash"),
+                      row=1, col=1)
+        fig.add_annotation(x=t1, y=zone.level, text=zone.label(),
+                           showarrow=False, font=dict(size=8, color=col),
+                           xanchor="right", row=1, col=1)
 
-    # ── Sweep candle highlights ───────────────────────────────────────────────
+    # ── Sweep highlights ──────────────────────────────────────────────────────
     for sweep in sweeps:
         if sweep.candle_idx not in df_s.index:
             continue
         t = df_s.loc[sweep.candle_idx, "timestamp"]
-        fig.add_vrect(
-            x0=t, x1=t, line_width=3, line_color="gold",
-            annotation_text="SWEEP", annotation_position="top left",
-            row=1, col=1,
-        )
+        fig.add_vrect(x0=t, x1=t, line_width=3, line_color="gold",
+                      annotation_text="SWEEP", annotation_position="top left",
+                      row=1, col=1)
 
-    # ── Signal levels ─────────────────────────────────────────────────────────
+    # ── Order Block boxes ─────────────────────────────────────────────────────
+    if obs:
+        t_end = df_s["timestamp"].iloc[-1]
+        for ob in obs[-10:]:   # show last 10 OBs
+            if ob.candle_idx not in df_s.index:
+                continue
+            t_start = df_s.loc[ob.candle_idx, "timestamp"]
+
+            if ob.ob_type == "bullish":
+                fill = ("rgba(0,230,118,0.12)" if not ob.mitigated
+                        else "rgba(0,230,118,0.04)")
+                border = ("rgba(0,230,118,0.7)" if not ob.mitigated
+                          else "rgba(0,230,118,0.25)")
+            else:
+                fill = ("rgba(255,76,76,0.12)" if not ob.mitigated
+                        else "rgba(255,76,76,0.04)")
+                border = ("rgba(255,76,76,0.7)" if not ob.mitigated
+                          else "rgba(255,76,76,0.25)")
+
+            # OB box
+            fig.add_shape(
+                type="rect", x0=t_start, x1=t_end,
+                y0=ob.low, y1=ob.high,
+                fillcolor=fill,
+                line=dict(color=border, width=1.5),
+                row=1, col=1,
+            )
+            mit_tag = " [MIT]" if ob.mitigated else ""
+            fvg_tag = " +FVG"  if ob.has_fvg   else ""
+            fig.add_annotation(
+                x=t_start, y=ob.high,
+                text=f"{ob.ob_type[:4].upper()} OB{fvg_tag}{mit_tag}",
+                showarrow=False,
+                font=dict(size=8, color=border),
+                xanchor="left",
+                row=1, col=1,
+            )
+
+            # FVG band inside OB
+            if ob.has_fvg:
+                fvg_fill = ("rgba(255,214,0,0.18)" if not ob.mitigated
+                            else "rgba(255,214,0,0.06)")
+                fig.add_shape(
+                    type="rect", x0=t_start, x1=t_end,
+                    y0=ob.fvg_low, y1=ob.fvg_high,
+                    fillcolor=fvg_fill,
+                    line=dict(color="rgba(255,214,0,0.6)", width=1, dash="dot"),
+                    row=1, col=1,
+                )
+
+    # ── Standalone FVGs (not attached to OBs) ────────────────────────────────
+    if fvgs:
+        shown = 0
+        t_end = df_s["timestamp"].iloc[-1]
+        for fvg in reversed(fvgs):
+            if fvg.filled or shown >= 5:
+                continue
+            if fvg.candle_idx not in df_s.index:
+                continue
+            t_start = df_s.loc[fvg.candle_idx, "timestamp"]
+            col     = ("rgba(0,255,150,0.08)" if fvg.fvg_type == "bullish"
+                       else "rgba(255,100,100,0.08)")
+            fig.add_shape(
+                type="rect", x0=t_start, x1=t_end,
+                y0=fvg.gap_low, y1=fvg.gap_high,
+                fillcolor=col,
+                line=dict(color=col.replace("0.08", "0.4"), width=1, dash="dash"),
+                row=1, col=1,
+            )
+            shown += 1
+
+    # ── Signal entry / SL / TP ────────────────────────────────────────────────
     if signal:
         fig.add_hrect(
             y0=signal["entry_low"], y1=signal["entry_high"],
@@ -123,71 +184,50 @@ def _build_figure(df: pd.DataFrame,
     title = f"{symbol}  [{timeframe}]"
     if signal:
         arrow = "🟢" if signal["direction"] == "long" else "🔴"
-        title += f"  {arrow} {signal['direction'].upper()}"
+        ob_note = f"  |  OB+FVG" if signal.get("ob_has_fvg") else \
+                  f"  |  OB"     if signal.get("ob_label")   else ""
+        title += f"  {arrow} {signal['direction'].upper()}{ob_note}"
 
     fig.update_layout(
         title=title,
         template="plotly_dark",
         xaxis_rangeslider_visible=False,
         showlegend=True,
-        height=750,
+        height=780,
         font=dict(family="monospace"),
         paper_bgcolor="#131722",
         plot_bgcolor="#131722",
     )
     fig.update_yaxes(title_text="Price",  row=1, col=1)
     fig.update_yaxes(title_text="Volume", row=2, col=1)
-
     return fig
 
 
-# ── Public: interactive browser chart ─────────────────────────────────────────
+# ── Public: interactive ────────────────────────────────────────────────────────
 
-def draw_chart(df: pd.DataFrame,
-               symbol: str,
-               timeframe: str,
-               zones: list[LiquidityZone],
-               sweeps: list[SweepEvent],
-               signal: dict | None = None) -> None:
-    """Open an interactive Plotly chart in the browser."""
-    fig = _build_figure(df, symbol, timeframe, zones, sweeps, signal)
+def draw_chart(df, symbol, timeframe, zones, sweeps,
+               signal=None, obs=None, fvgs=None):
+    fig = _build_figure(df, symbol, timeframe, zones, sweeps, signal, obs, fvgs)
     fig.show()
 
 
-# ── Public: render PNG for Telegram ───────────────────────────────────────────
+# ── Public: PNG for Telegram ───────────────────────────────────────────────────
 
-def render_chart_image(df: pd.DataFrame,
-                       symbol: str,
-                       timeframe: str,
-                       zones: list[LiquidityZone],
-                       sweeps: list[SweepEvent],
-                       signal: dict | None = None,
-                       width: int = 1400,
-                       height: int = 800) -> str | None:
-    """
-    Render the chart to a PNG file and return the file path.
-
-    Returns None if kaleido is not installed or export fails.
-
-    Requires:  pip install kaleido
-    The PNG is saved to a temp file — caller is responsible for deleting it
-    after upload (use Path(path).unlink()).
-    """
+def render_chart_image(df, symbol, timeframe, zones, sweeps,
+                       signal=None, obs=None, fvgs=None,
+                       width=1400, height=800) -> str | None:
+    """Render chart to PNG. Returns temp file path, or None on failure."""
     try:
-        import kaleido  # noqa: F401 — just to check it's installed
+        import kaleido  # noqa
     except ImportError:
         from utils import log_warn
         log_warn("[CHART] kaleido not installed — pip install kaleido")
         return None
-
     try:
-        fig  = _build_figure(df, symbol, timeframe, zones, sweeps, signal)
+        fig  = _build_figure(df, symbol, timeframe, zones, sweeps, signal, obs, fvgs)
         safe = symbol.replace("/", "_")
         tmp  = tempfile.NamedTemporaryFile(
-            suffix=".png",
-            prefix=f"smc_{safe}_{timeframe}_",
-            delete=False,
-        )
+            suffix=".png", prefix=f"smc_{safe}_{timeframe}_", delete=False)
         tmp.close()
         fig.write_image(tmp.name, width=width, height=height, scale=2)
         return tmp.name

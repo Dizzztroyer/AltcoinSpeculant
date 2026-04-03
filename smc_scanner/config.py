@@ -67,4 +67,27 @@ TELEGRAM_CHAT_ID   = "YOUR_CHAT_ID_HERE"
 
 # ── Output ────────────────────────────────────────────────────────────────────
 SHOW_CHART = False
-LOG_FILE   = "signals.log"# Append signals here; set "" to disable
+LOG_FILE   = "signals.log"
+
+# ── Scheduler ────────────────────────────────────────────────────────────────
+RUN_ON_START = True   # True = run immediately on startup, then align to next hour
+
+# ── Multi-timeframe confluence filter ─────────────────────────────────────────
+# HTF_FILTER_ENABLED : master switch — set False to disable entirely
+# HTF_FILTER_STRICT  : True  = block signals that oppose HTF (hard filter)
+#                      False = allow all signals, opposing HTF only loses points
+HTF_FILTER_ENABLED = True
+HTF_FILTER_STRICT  = True
+
+# ── I. Order Block settings ───────────────────────────────────────────────────
+# OB_LOOKBACK           : how many recent candles to scan for OBs
+# OB_IMPULSE_LOOKFORWARD: how many candles ahead to look for the impulse move
+# OB_MIN_IMPULSE_PCT    : minimum impulse size (fraction of price) to qualify
+# OB_FVG_MIN_GAP        : minimum FVG gap size (fraction of price)
+# OB_FVG_SEARCH_RANGE   : how far outside OB bounds to search for nearby FVG
+#                         (as multiple of OB height)
+OB_LOOKBACK            = 100
+OB_IMPULSE_LOOKFORWARD = 5
+OB_MIN_IMPULSE_PCT     = 0.003   # 0.3 % minimum impulse
+OB_FVG_MIN_GAP         = 0.0005  # 0.05 % minimum gap
+OB_FVG_SEARCH_RANGE    = 1.5     # search 1.5× OB height outside OB for FVG
