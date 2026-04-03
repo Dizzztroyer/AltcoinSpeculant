@@ -12,6 +12,10 @@ SYMBOLS = [
     "ETH/USDT",
     "SOL/USDT",
     "BNB/USDT",
+    # Added symbols
+    "XRP/USDT",
+    "AVAX/USDT",
+    "DOGE/USDT",
 ]
 
 TIMEFRAMES = ["15m", "1h"]
@@ -28,7 +32,7 @@ HTF_MAP = {
 }
 
 CANDLE_LIMIT          = 200
-SCAN_INTERVAL_SECONDS = 3600
+SCAN_INTERVAL_MINUTES = 30    # run every 30 minutes, aligned to :00 and :30
 
 SWING_LOOKBACK    = 5
 BOS_THRESHOLD     = 0.0010
@@ -70,7 +74,11 @@ SHOW_CHART = False
 LOG_FILE   = "signals.log"
 
 # ── Scheduler ────────────────────────────────────────────────────────────────
-RUN_ON_START = True   # True = run immediately on startup, then align to next hour
+RUN_ON_START = True   # True = run immediately on startup, then align to next interval
+
+# Local timezone for midnight daily report (IANA format)
+# Examples: 'Europe/Kiev', 'Europe/London', 'America/New_York', 'Asia/Singapore'
+LOCAL_TIMEZONE = "Europe/Kiev"
 
 # ── Multi-timeframe confluence filter ─────────────────────────────────────────
 # HTF_FILTER_ENABLED : master switch — set False to disable entirely

@@ -1,5 +1,16 @@
 #!/usr/bin/env python3
-"""main.py — SMC Scanner v2"""
+"""
+main.py — SMC Scanner v2
+
+Usage:
+    python main.py                       # run once immediately
+    python main.py --loop                # 30-min scheduler aligned to clock
+    python main.py --symbol BTC/USDT --tf 15m
+    python main.py --no-chart
+    python main.py --summary             # DB status counts
+    python main.py --dashboard           # HTML portfolio dashboard
+    python main.py --report              # print midnight report now
+"""
 
 import argparse
 import sys
@@ -10,8 +21,9 @@ import portfolio
 import evaluator
 import scoring
 import alerts
-from charting import draw_chart, render_chart_image
+from charting import draw_chart
 from datafeed import fetch_all
+from daily_report import run_daily_report
 from liquidity import build_liquidity_zones, detect_sweeps
 from orderblocks import find_fvgs, find_order_blocks
 from scheduler import run_scheduler
@@ -22,13 +34,15 @@ from utils import format_signal, log_error, log_info, log_signal, log_warn
 
 def parse_args():
     p = argparse.ArgumentParser(description="SMC Scanner v2")
-    p.add_argument("--symbol",   default=None)
-    p.add_argument("--tf",       default=None)
-    p.add_argument("--loop",     action="store_true")
-    p.add_argument("--no-chart", action="store_true")
-    p.add_argument("--limit",    type=int, default=None)
-    p.add_argument("--summary",  action="store_true")
-    p.add_argument("--dashboard", action="store_true", help="Open HTML portfolio dashboard")
+    p.add_argument("--symbol",    default=None)
+    p.add_argument("--tf",        default=None)
+    p.add_argument("--loop",      action="store_true")
+    p.add_argument("--no-chart",  action="store_true")
+    p.add_argument("--limit",     type=int, default=None)
+    p.add_argument("--summary",   action="store_true")
+    p.add_argument("--dashboard", action="store_true")
+    p.add_argument("--report",    action="store_true",
+                   help="Print daily report immediately and exit")
     return p.parse_args()
 
 
@@ -52,6 +66,7 @@ _limit:      int | None = None
 
 
 def run_cycle() -> None:
+    """One complete evaluate → scan → score → save → alert pass."""
     evaluator.evaluate_open_signals()
 
     data = fetch_all(symbols=_symbols, timeframes=_timeframes)
@@ -75,7 +90,6 @@ def run_cycle() -> None:
             log_info("[SCAN]   no setup found")
             continue
 
-        # Pre-compute chart data once per (sym, tf)
         df_s   = find_swings(df)
         zones  = build_liquidity_zones(df_s)
         sweeps = detect_sweeps(df_s, zones)
@@ -83,7 +97,6 @@ def run_cycle() -> None:
         obs    = find_order_blocks(df_s, fvgs=fvgs)
 
         for sig in raw_signals:
-
             try:
                 score, htf_bias = scoring.score_signal(sig, df)
             except Exception as exc:
@@ -100,12 +113,9 @@ def run_cycle() -> None:
                 continue
 
             log_info(f"[DB] saved #{signal_id}  {sym} {tf} "
-                     f"{sig['direction'].upper()}  score={score}  "
-                     f"OB={'yes' if sig.get('ob_label') else 'no'}  "
-                     f"FVG={'yes' if sig.get('ob_has_fvg') else 'no'}")
+                     f"{sig['direction'].upper()}  score={score}")
             log_signal(format_signal(sig))
 
-            # Alert with chart image (pass obs/fvgs for full annotations)
             alerts.maybe_send_alert(
                 signal_id, sig, score, htf_bias, vol_ok,
                 df=df_s, zones=zones, sweeps=sweeps,
@@ -145,19 +155,31 @@ def main():
         journal.print_summary()
         return
 
+    if args.report:
+        run_daily_report()
+        return
+
     if args.dashboard:
         from dashboard import print_report, generate_html
         import webbrowser
         from pathlib import Path
         print_report()
         path = generate_html()
-        webbrowser.open(f'file://{Path(path).resolve()}')
+        webbrowser.open(f"file://{Path(path).resolve()}")
         return
 
     if args.loop:
-        log_info("[MAIN] starting hourly scheduler")
+        interval = getattr(config, "SCAN_INTERVAL_MINUTES", 30)
+        log_info(f"[MAIN] starting {interval}-minute scheduler "
+                 f"(timezone: {config.LOCAL_TIMEZONE})")
         _print_context_table(_symbols, _timeframes)
-        run_scheduler(run_cycle, run_on_start=config.RUN_ON_START)
+        run_scheduler(
+            run_cycle=run_cycle,
+            run_on_start=config.RUN_ON_START,
+            interval_minutes=interval,
+            daily_report_fn=run_daily_report,
+            local_tz=config.LOCAL_TIMEZONE,
+        )
     else:
         _print_context_table(_symbols, _timeframes)
         run_cycle()
