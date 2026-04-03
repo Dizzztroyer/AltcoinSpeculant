@@ -91,3 +91,7 @@ OB_IMPULSE_LOOKFORWARD = 5
 OB_MIN_IMPULSE_PCT     = 0.003   # 0.3 % minimum impulse
 OB_FVG_MIN_GAP         = 0.0005  # 0.05 % minimum gap
 OB_FVG_SEARCH_RANGE    = 1.5     # search 1.5× OB height outside OB for FVG
+
+# ── J. Virtual Portfolio ───────────────────────────────────────────────────────
+VIRTUAL_BALANCE      = 100.0   # starting balance in USD
+RISK_PER_TRADE_PCT   = 0.01    # 1% risk per trade

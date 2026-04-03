@@ -6,6 +6,7 @@ import sys
 
 import config
 import journal
+import portfolio
 import evaluator
 import scoring
 import alerts
@@ -27,6 +28,7 @@ def parse_args():
     p.add_argument("--no-chart", action="store_true")
     p.add_argument("--limit",    type=int, default=None)
     p.add_argument("--summary",  action="store_true")
+    p.add_argument("--dashboard", action="store_true", help="Open HTML portfolio dashboard")
     return p.parse_args()
 
 
@@ -137,9 +139,19 @@ def main():
 
     print(BANNER)
     journal.init_db()
+    portfolio.init_portfolio_db()
 
     if args.summary:
         journal.print_summary()
+        return
+
+    if args.dashboard:
+        from dashboard import print_report, generate_html
+        import webbrowser
+        from pathlib import Path
+        print_report()
+        path = generate_html()
+        webbrowser.open(f'file://{Path(path).resolve()}')
         return
 
     if args.loop:

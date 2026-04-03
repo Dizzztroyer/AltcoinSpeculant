@@ -1,4 +1,4 @@
-# journal.py — SQLite signal persistence layer (v2 + telegram_message_id)
+# journal.py — SQLite signal persistence layer
 
 import hashlib
 import sqlite3
@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS signals (
     sweep_side           TEXT,
     bos_type             TEXT,
     higher_tf_bias       TEXT,
+    ob_label             TEXT,
     entry_hit            INTEGER DEFAULT 0,
     entry_hit_at         TEXT,
     exit_price           REAL,
@@ -44,26 +45,33 @@ CREATE TABLE IF NOT EXISTS signals (
     mfe                  REAL,
     mae                  REAL,
     expires_at           TEXT,
-    signal_hash          TEXT    UNIQUE
+    signal_hash          TEXT    UNIQUE,
+    position_size        REAL,
+    pnl_usd              REAL,
+    pnl_pct              REAL
 );
 """
 
-MIGRATE_ADD_TELEGRAM_ID = """
-ALTER TABLE signals ADD COLUMN telegram_message_id INTEGER DEFAULT NULL;
-"""
+# All migration columns in one place
+_MIGRATIONS = {
+    "telegram_message_id": "INTEGER DEFAULT NULL",
+    "ob_label":            "TEXT",
+    "position_size":       "REAL",
+    "pnl_usd":             "REAL",
+    "pnl_pct":             "REAL",
+}
 
 
 def init_db() -> None:
-    """Create table if missing; run any pending migrations."""
     with _connect() as con:
         con.execute(CREATE_TABLE)
         con.execute("CREATE INDEX IF NOT EXISTS idx_status ON signals(status)")
 
-        # Migration: add telegram_message_id if old DB exists without it
         cols = {row[1] for row in con.execute("PRAGMA table_info(signals)")}
-        if "telegram_message_id" not in cols:
-            con.execute(MIGRATE_ADD_TELEGRAM_ID)
-            print("[DB] migrated: added telegram_message_id column")
+        for col, col_def in _MIGRATIONS.items():
+            if col not in cols:
+                con.execute(f"ALTER TABLE signals ADD COLUMN {col} {col_def}")
+                print(f"[DB] migrated: added signals.{col}")
 
     print(f"[DB] initialized → {config.DB_PATH}")
 
@@ -75,7 +83,6 @@ def make_signal_hash(symbol: str, timeframe: str, direction: str,
 
 
 def save_signal(sig: dict, score: int, higher_tf_bias: str = "") -> Optional[int]:
-    """Persist a new signal. Returns new row id, or None if duplicate."""
     now        = datetime.now(timezone.utc)
     expires_at = now + timedelta(hours=config.SIGNAL_EXPIRY_HOURS)
 
@@ -85,8 +92,7 @@ def save_signal(sig: dict, score: int, higher_tf_bias: str = "") -> Optional[int
 
     sig_hash = make_signal_hash(
         sig["symbol"], sig["timeframe"], sig["direction"],
-        sig["entry_low"], sig["entry_high"]
-    )
+        sig["entry_low"], sig["entry_high"])
 
     row = {
         "created_at":          now.isoformat(),
@@ -107,6 +113,7 @@ def save_signal(sig: dict, score: int, higher_tf_bias: str = "") -> Optional[int
         "sweep_side":          sig.get("sweep_desc", ""),
         "bos_type":            sig.get("bos_desc", ""),
         "higher_tf_bias":      higher_tf_bias,
+        "ob_label":            sig.get("ob_label", ""),
         "entry_hit":           0,
         "entry_hit_at":        None,
         "exit_price":          None,
@@ -116,6 +123,9 @@ def save_signal(sig: dict, score: int, higher_tf_bias: str = "") -> Optional[int
         "mae":                 None,
         "expires_at":          expires_at.isoformat(),
         "signal_hash":         sig_hash,
+        "position_size":       None,
+        "pnl_usd":             None,
+        "pnl_pct":             None,
     }
 
     sql = """
@@ -123,16 +133,18 @@ def save_signal(sig: dict, score: int, higher_tf_bias: str = "") -> Optional[int
             (created_at, symbol, timeframe, direction, context,
              entry_low, entry_high, stop_loss, take_profit, rr,
              score, alert_sent, telegram_message_id, status, reason,
-             sweep_side, bos_type, higher_tf_bias,
+             sweep_side, bos_type, higher_tf_bias, ob_label,
              entry_hit, entry_hit_at, exit_price, exit_reason,
-             closed_at, mfe, mae, expires_at, signal_hash)
+             closed_at, mfe, mae, expires_at, signal_hash,
+             position_size, pnl_usd, pnl_pct)
         VALUES
             (:created_at, :symbol, :timeframe, :direction, :context,
              :entry_low, :entry_high, :stop_loss, :take_profit, :rr,
              :score, :alert_sent, :telegram_message_id, :status, :reason,
-             :sweep_side, :bos_type, :higher_tf_bias,
+             :sweep_side, :bos_type, :higher_tf_bias, :ob_label,
              :entry_hit, :entry_hit_at, :exit_price, :exit_reason,
-             :closed_at, :mfe, :mae, :expires_at, :signal_hash)
+             :closed_at, :mfe, :mae, :expires_at, :signal_hash,
+             :position_size, :pnl_usd, :pnl_pct)
     """
     with _connect() as con:
         cur = con.execute(sql, row)
@@ -147,12 +159,12 @@ def get_open_signals() -> list[sqlite3.Row]:
 
 def get_signal_by_id(signal_id: int) -> Optional[sqlite3.Row]:
     with _connect() as con:
-        return con.execute("SELECT * FROM signals WHERE id=?", (signal_id,)).fetchone()
+        return con.execute("SELECT * FROM signals WHERE id=?",
+                           (signal_id,)).fetchone()
 
 
 def get_recent_signals(symbol: str, timeframe: str,
                        direction: str, hours: int) -> list[sqlite3.Row]:
-    from datetime import timedelta
     cutoff = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
     sql = """
         SELECT * FROM signals
@@ -163,12 +175,12 @@ def get_recent_signals(symbol: str, timeframe: str,
         return con.execute(sql, (symbol, timeframe, direction, cutoff)).fetchall()
 
 
-def mark_alert_sent(signal_id: int, telegram_message_id: int | None = None) -> None:
+def mark_alert_sent(signal_id: int,
+                    telegram_message_id: int | None = None) -> None:
     with _connect() as con:
         con.execute(
             "UPDATE signals SET alert_sent=1, telegram_message_id=? WHERE id=?",
-            (telegram_message_id, signal_id),
-        )
+            (telegram_message_id, signal_id))
 
 
 def update_signal_status(signal_id: int, status: str,

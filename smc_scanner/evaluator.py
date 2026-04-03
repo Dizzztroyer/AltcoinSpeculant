@@ -1,8 +1,4 @@
-# evaluator.py — Signal lifecycle evaluation
-#
-# Ambiguity rule: when both SL and TP are inside the same candle:
-#   LONG  → close > mid_entry = won, else lost
-#   SHORT → close < mid_entry = won, else lost
+# evaluator.py — Signal lifecycle + portfolio PnL recording
 
 from datetime import datetime, timezone
 from typing import Optional
@@ -11,6 +7,7 @@ import pandas as pd
 
 import config
 import journal
+import portfolio
 from datafeed import fetch_ohlcv
 from utils import log_info, log_warn
 
@@ -37,10 +34,11 @@ def _evaluate_one(row) -> None:
     created_at  = row["created_at"]
     expires_at  = row["expires_at"]
     status      = row["status"]
+    mid_entry   = (entry_low + entry_high) / 2
 
     now = datetime.now(timezone.utc).isoformat()
 
-    # ── 1. Immediate expiry check (pending, never hit entry) ──────────────────
+    # ── Immediate expiry ──────────────────────────────────────────────────────
     if expires_at and now >= expires_at and status == "pending":
         journal.update_signal_status(signal_id, "expired",
                                      closed_at=now,
@@ -49,7 +47,7 @@ def _evaluate_one(row) -> None:
         _try_send_outcome_reply(signal_id)
         return
 
-    # ── 2. Fetch new candles ──────────────────────────────────────────────────
+    # ── Fetch candles ─────────────────────────────────────────────────────────
     df = fetch_ohlcv(symbol, timeframe,
                      limit=config.EVALUATION_LOOKAHEAD_BARS + 50)
     if df.empty:
@@ -58,20 +56,17 @@ def _evaluate_one(row) -> None:
 
     created_dt = pd.to_datetime(created_at, utc=True)
     df = df[df["timestamp"] > created_dt].reset_index(drop=True)
-
     if df.empty:
         log_info(f"[EVAL] #{signal_id}: no new candles yet")
         return
-
     df = df.head(config.EVALUATION_LOOKAHEAD_BARS)
 
-    mid_entry    = (entry_low + entry_high) / 2
     entry_hit    = row["entry_hit"] == 1
     entry_hit_at = row["entry_hit_at"]
-    mfe          = row["mfe"]
-    mae          = row["mae"]
-    best_price   = mid_entry
-    worst_price  = mid_entry
+    mfe = row["mfe"]
+    mae = row["mae"]
+    best_price  = mid_entry
+    worst_price = mid_entry
 
     for _, candle in df.iterrows():
         h  = candle["high"]
@@ -81,14 +76,22 @@ def _evaluate_one(row) -> None:
 
         # ── Entry trigger ─────────────────────────────────────────────────────
         if not entry_hit:
-            triggered = (direction == "long"  and l <= entry_high) or \
-                        (direction == "short" and h >= entry_low)
+            triggered = ((direction == "long"  and l <= entry_high) or
+                         (direction == "short" and h >= entry_low))
             if triggered:
                 entry_hit    = True
                 entry_hit_at = ts
                 journal.update_signal_status(signal_id, "triggered",
                                              entry_hit=True, entry_hit_at=ts)
                 log_info(f"[EVAL] #{signal_id} {symbol} TRIGGERED @ {ts}")
+
+                # ── Open virtual trade ────────────────────────────────────────
+                portfolio.open_trade(
+                    signal_id=signal_id,
+                    symbol=symbol, timeframe=timeframe, direction=direction,
+                    entry_mid=mid_entry, stop_loss=stop_loss,
+                    take_profit=take_profit,
+                )
             else:
                 if expires_at and ts >= expires_at:
                     journal.update_signal_status(signal_id, "expired",
@@ -112,18 +115,18 @@ def _evaluate_one(row) -> None:
             mae = round(mid_entry - worst_price, 6)
 
         # ── SL / TP check ─────────────────────────────────────────────────────
-        tp_hit = (direction == "long"  and h >= take_profit) or \
-                 (direction == "short" and l <= take_profit)
-        sl_hit = (direction == "long"  and l <= stop_loss) or \
-                 (direction == "short" and h >= stop_loss)
+        tp_hit = ((direction == "long"  and h >= take_profit) or
+                  (direction == "short" and l <= take_profit))
+        sl_hit = ((direction == "long"  and l <= stop_loss) or
+                  (direction == "short" and h >= stop_loss))
 
         if tp_hit and sl_hit:
-            outcome = ("won"  if (direction == "long"  and c > mid_entry) or
-                                 (direction == "short" and c < mid_entry)
+            outcome = ("won" if ((direction == "long"  and c > mid_entry) or
+                                 (direction == "short" and c < mid_entry))
                        else "lost")
             exit_p = take_profit if outcome == "won" else stop_loss
-            exit_r = ("TP (ambiguous candle)" if outcome == "won"
-                      else "SL (ambiguous candle)")
+            exit_r = ("TP (ambiguous)" if outcome == "won"
+                      else "SL (ambiguous)")
         elif tp_hit:
             outcome, exit_p, exit_r = "won",  take_profit, "TP hit"
         elif sl_hit:
@@ -135,22 +138,30 @@ def _evaluate_one(row) -> None:
                                              closed_at=ts,
                                              exit_reason="expired after entry",
                                              exit_price=c)
+                # Close virtual trade at market
+                portfolio.close_trade(signal_id, exit_price=c, outcome="expired")
                 log_info(f"[EVAL] #{signal_id} → expired after entry")
                 _try_send_outcome_reply(signal_id)
                 return
             continue
 
-        # ── Final outcome ─────────────────────────────────────────────────────
+        # ── Record outcome ────────────────────────────────────────────────────
         journal.update_signal_status(
             signal_id, outcome,
             entry_hit=True, entry_hit_at=entry_hit_at,
             exit_price=exit_p, exit_reason=exit_r,
             closed_at=ts, mfe=mfe, mae=mae,
         )
-        log_info(f"[EVAL] #{signal_id} {symbol} {timeframe} "
-                 f"{direction.upper()} → {outcome.upper()} ({exit_r})")
 
-        # ── Send Telegram reply with outcome ──────────────────────────────────
+        # ── Close virtual trade ───────────────────────────────────────────────
+        pnl_result = portfolio.close_trade(signal_id,
+                                           exit_price=exit_p,
+                                           outcome=outcome)
+
+        log_info(f"[EVAL] #{signal_id} {symbol} {timeframe} "
+                 f"{direction.upper()} → {outcome.upper()} ({exit_r})"
+                 + (f"  PnL=${pnl_result['pnl_usd']:+.2f}" if pnl_result else ""))
+
         _try_send_outcome_reply(signal_id)
         return
 
@@ -160,9 +171,8 @@ def _evaluate_one(row) -> None:
 
 
 def _try_send_outcome_reply(signal_id: int) -> None:
-    """Fire-and-forget: send Telegram reply if alerts are enabled."""
     try:
         from alerts import send_outcome_reply
         send_outcome_reply(signal_id)
     except Exception as exc:
-        log_warn(f"[EVAL] outcome reply error for #{signal_id}: {exc}")
+        log_warn(f"[EVAL] reply error for #{signal_id}: {exc}")

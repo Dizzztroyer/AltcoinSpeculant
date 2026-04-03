@@ -253,3 +253,18 @@
   Reason     : Swept Low @ 78.9600, closed back above, then BULLISH BOS @ 79.3700 confirmed → bullish continuation expected
 ========================================================
 
+========================================================
+  SMC SIGNAL — 2026-04-03 06:00:57 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 15m
+  Context    : Bearish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 66731.0800
+  Signal     : SHORT 🔴
+  Entry zone : 66460.64 – 66731.08
+  Stop Loss  : 66884.07
+  Take Profit: 66019.44
+  Reason     : Swept High @ 66516.0600, closed back below, BEARISH BOS @ 66731.0800 confirmed → bearish continuation. No OB found — using sweep/BOS range.
+========================================================
+
