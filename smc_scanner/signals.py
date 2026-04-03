@@ -1,198 +1,102 @@
-# signals.py — Signal generation with Order Block + FVG entry zones
+# signals.py — SMC signal generator with strict multi-layer confirmation
 #
 # Pipeline:
-#   1. Market context
-#   2. Liquidity zones
-#   3. Sweep detection
-#   4. BOS / MBOS confirmation
-#   5. Order Block detection
-#   6. OB-refined entry zone  ← replaces the old rough entry
-#   7. HTF confluence filter
-#   8. Attach all metadata
+#   1.  Market context + swing detection
+#   2.  Liquidity zones
+#   3.  Sweep detection
+#   4.  BOS detection
+#   5.  OB / FVG computation
+#   6.  Run ALL 6 confirmation layers via confirmation.py
+#   7.  Build signal only if CheckResult.allowed == True
+#   8.  Entry zone = OB / FVG (no fallback to rough zone)
+#   9.  Attach full confirmation metadata to signal dict
 
 from __future__ import annotations
 
 import pandas as pd
 
 import config
-from liquidity import build_liquidity_zones, detect_sweeps, SweepEvent
-from orderblocks import (OrderBlock, find_fvgs, find_order_blocks,
-                         get_nearest_ob)
-from structure import (BOSEvent, HTFConfluence, find_swings,
-                       get_htf_confluence, get_market_context)
-from utils import log_info, pct_diff
+from confirmation import CheckResult, run_confirmations
+from liquidity import LiquidityZone, SweepEvent, build_liquidity_zones, detect_sweeps
+from orderblocks import FairValueGap, OrderBlock, find_fvgs, find_order_blocks, get_nearest_ob
+from structure import BOSEvent, find_swings, get_market_context, detect_bos
+from utils import log_info, log_warn
 
 
-# ── Long signal builder ────────────────────────────────────────────────────────
+# ── Entry zone builder ────────────────────────────────────────────────────────
 
-def _build_long_signal(symbol: str, timeframe: str,
-                       context: str,
-                       sweep: SweepEvent,
-                       bos: BOSEvent,
-                       ob: OrderBlock | None,
-                       df: pd.DataFrame) -> dict | None:
-    if sweep.direction != "down":
-        return None
-    if bos.direction != "bullish":
-        return None
-    if bos.candle_idx <= sweep.candle_idx:
-        return None
-
+def _build_entry(direction: str,
+                 sweep: SweepEvent,
+                 bos: BOSEvent,
+                 obs: list[OrderBlock],
+                 fvgs: list[FairValueGap],
+                 df: pd.DataFrame) -> dict | None:
+    """
+    Build the entry parameters ONLY from OB / FVG.
+    No fallback to rough sweep/BOS range — if no OB/FVG, return None.
+    (confirmation.py already ensures at least one exists before we reach here)
+    """
     current_price = df["close"].iloc[-1]
+    ob = get_nearest_ob(obs, direction, current_price)
 
-    # ── Entry zone ────────────────────────────────────────────────────────────
-    if ob is not None and not ob.mitigated:
-        # Precise OB-based entry
+    if ob and not ob.mitigated:
         entry_low  = ob.entry_low
         entry_high = ob.entry_high
-        stop       = ob.low * (1 - config.DEFAULT_SL_BUFFER)
+        stop       = (ob.low  * (1 - config.DEFAULT_SL_BUFFER) if direction == "long"
+                      else ob.high * (1 + config.DEFAULT_SL_BUFFER))
         ob_label   = ob.label()
+        ob_has_fvg = ob.has_fvg
     else:
-        # Fallback: old sweep-to-BOS range
-        entry_low  = min(sweep.sweep_close, bos.broken_level)
-        entry_high = max(sweep.sweep_close, bos.broken_level)
-        stop       = sweep.sweep_low * (1 - config.DEFAULT_SL_BUFFER)
-        ob_label   = None
+        # OB not usable — try standalone FVG
+        fvg_type   = "bullish" if direction == "long" else "bearish"
+        candidates = [f for f in fvgs if f.fvg_type == fvg_type and not f.filled]
+        if not candidates:
+            return None   # no entry zone at all
+        fvg        = candidates[-1]
+        entry_low  = fvg.gap_low
+        entry_high = fvg.gap_high
+        stop       = (sweep.sweep_low  * (1 - config.DEFAULT_SL_BUFFER) if direction == "long"
+                      else sweep.sweep_high * (1 + config.DEFAULT_SL_BUFFER))
+        ob_label   = f"FVG [{fvg.gap_low:.2f}–{fvg.gap_high:.2f}]"
+        ob_has_fvg = True
 
     if entry_high <= entry_low:
         entry_high = entry_low * 1.001
 
     mid_entry = (entry_low + entry_high) / 2
-    risk      = mid_entry - stop
+    risk      = abs(mid_entry - stop)
     if risk <= 0:
         return None
 
-    tp = mid_entry + risk * config.DEFAULT_RR_RATIO
-
-    # Build reason string
-    if ob_label:
-        fvg_note = " (FVG overlap)" if ob is not None and ob.has_fvg else ""
-        reason = (
-            f"Swept {sweep.zone.label()}, bullish {bos.label()} confirmed. "
-            f"Entry refined to {ob_label}{fvg_note}"
-        )
-    else:
-        reason = (
-            f"Swept {sweep.zone.label()}, closed back above, "
-            f"{bos.label()} confirmed → bullish continuation. "
-            f"No OB found — using sweep/BOS range."
-        )
+    tp = (mid_entry + risk * config.DEFAULT_RR_RATIO if direction == "long"
+          else mid_entry - risk * config.DEFAULT_RR_RATIO)
 
     return dict(
-        symbol=symbol, timeframe=timeframe,
-        context=context.title(),
-        sweep_desc=sweep.label(),
-        bos_desc=bos.label(),
-        direction="long",
-        entry_low=entry_low, entry_high=entry_high,
-        stop=stop, tp=tp, reason=reason,
-        ob_label=ob_label or "",
-        ob_has_fvg=ob.has_fvg if ob else False,
+        entry_low=entry_low,
+        entry_high=entry_high,
+        stop=stop,
+        tp=tp,
+        ob_label=ob_label,
+        ob_has_fvg=ob_has_fvg,
     )
-
-
-# ── Short signal builder ───────────────────────────────────────────────────────
-
-def _build_short_signal(symbol: str, timeframe: str,
-                        context: str,
-                        sweep: SweepEvent,
-                        bos: BOSEvent,
-                        ob: OrderBlock | None,
-                        df: pd.DataFrame) -> dict | None:
-    if sweep.direction != "up":
-        return None
-    if bos.direction != "bearish":
-        return None
-    if bos.candle_idx <= sweep.candle_idx:
-        return None
-
-    current_price = df["close"].iloc[-1]
-
-    if ob is not None and not ob.mitigated:
-        entry_low  = ob.entry_low
-        entry_high = ob.entry_high
-        stop       = ob.high * (1 + config.DEFAULT_SL_BUFFER)
-        ob_label   = ob.label()
-    else:
-        entry_high = max(sweep.sweep_close, bos.broken_level)
-        entry_low  = min(sweep.sweep_close, bos.broken_level)
-        stop       = sweep.sweep_high * (1 + config.DEFAULT_SL_BUFFER)
-        ob_label   = None
-
-    if entry_high <= entry_low:
-        entry_low = entry_high * 0.999
-
-    mid_entry = (entry_low + entry_high) / 2
-    risk      = stop - mid_entry
-    if risk <= 0:
-        return None
-
-    tp = mid_entry - risk * config.DEFAULT_RR_RATIO
-
-    if ob_label:
-        fvg_note = " (FVG overlap)" if ob is not None and ob.has_fvg else ""
-        reason = (
-            f"Swept {sweep.zone.label()}, bearish {bos.label()} confirmed. "
-            f"Entry refined to {ob_label}{fvg_note}"
-        )
-    else:
-        reason = (
-            f"Swept {sweep.zone.label()}, closed back below, "
-            f"{bos.label()} confirmed → bearish continuation. "
-            f"No OB found — using sweep/BOS range."
-        )
-
-    return dict(
-        symbol=symbol, timeframe=timeframe,
-        context=context.title(),
-        sweep_desc=sweep.label(),
-        bos_desc=bos.label(),
-        direction="short",
-        entry_low=entry_low, entry_high=entry_high,
-        stop=stop, tp=tp, reason=reason,
-        ob_label=ob_label or "",
-        ob_has_fvg=ob.has_fvg if ob else False,
-    )
-
-
-# ── HTF filter ─────────────────────────────────────────────────────────────────
-
-def _apply_htf_filter(sig: dict) -> tuple[bool, HTFConfluence | None]:
-    if not config.HTF_FILTER_ENABLED:
-        return True, None
-
-    confluence = get_htf_confluence(
-        symbol=sig["symbol"],
-        signal_direction=sig["direction"],
-        signal_timeframe=sig["timeframe"],
-    )
-
-    if confluence is None:
-        log_info(f"[HTF] data unavailable for {sig['symbol']} — filter skipped")
-        return True, None
-
-    log_info(f"[HTF] {sig['symbol']} {sig['timeframe']} "
-             f"{sig['direction'].upper()} — {confluence.reason}")
-
-    if config.HTF_FILTER_STRICT and confluence.opposing:
-        log_info(f"[HTF] BLOCKED — opposes {confluence.htf_tf} ({confluence.bias})")
-        return False, confluence
-
-    return True, confluence
 
 
 # ── Main scanner ───────────────────────────────────────────────────────────────
 
-def scan_for_signals(symbol: str, timeframe: str, df: pd.DataFrame) -> list[dict]:
+def scan_for_signals(symbol: str, timeframe: str,
+                     df: pd.DataFrame) -> list[dict]:
     """
-    Full SMC pipeline with OB-refined entries.
+    Full A+ SMC pipeline.
 
-    Returns list of signal dicts. Each dict contains:
-      Standard:  symbol, timeframe, context, direction,
-                 entry_low, entry_high, stop, tp, reason,
-                 sweep_desc, bos_desc
-      OB fields: ob_label, ob_has_fvg
-      HTF fields: htf_bias, htf_aligned, htf_opposing, htf_tf, htf_reason
+    Returns list of signal dicts — normally 0 or 1.
+    Each dict includes:
+      Core:         symbol, timeframe, direction, context
+                    entry_low, entry_high, stop, tp
+                    sweep_desc, bos_desc, ob_label, ob_has_fvg, reason
+      Confirmation: conf_score, conf_passed, conf_failed,
+                    conf_rejected_by, htf_bias, htf_aligned,
+                    htf_opposing, htf_tf, htf_reason,
+                    pd_zone, liq_target
     """
     if len(df) < 60:
         return []
@@ -203,74 +107,105 @@ def scan_for_signals(symbol: str, timeframe: str, df: pd.DataFrame) -> list[dict
     zones  = build_liquidity_zones(df_s)
     sweeps = detect_sweeps(df_s, zones)
     if not sweeps:
+        log_info(f"[SCAN] {symbol} {timeframe}: no sweeps")
         return []
 
-    bos_events = _get_bos_events_after(df_s, sweeps[-1].candle_idx)
-    if not bos_events:
+    bos_all    = detect_bos(df_s)
+    last_sweep = sweeps[-1]
+    bos_after  = [e for e in bos_all if e.candle_idx > last_sweep.candle_idx]
+
+    if not bos_after:
+        log_info(f"[SCAN] {symbol} {timeframe}: no BOS after sweep")
         return []
 
-    # Pre-compute OBs and FVGs once for the whole df
     fvgs = find_fvgs(df_s)
     obs  = find_order_blocks(df_s, fvgs=fvgs)
 
-    if obs:
-        unmitigated = [o for o in obs if not o.mitigated]
-        log_info(f"[OB] {symbol} {timeframe} — "
-                 f"{len(obs)} OBs found, {len(unmitigated)} unmitigated, "
-                 f"{len(fvgs)} FVGs")
+    direction = "long" if last_sweep.direction == "down" else "short"
+    bos       = bos_after[0]   # first BOS after sweep
 
-    signals: list[dict] = []
-    last_sweep = sweeps[-1]
-    current_price = df_s["close"].iloc[-1]
+    # ── Direction pre-check ───────────────────────────────────────────────────
+    if direction == "long" and bos.direction != "bullish":
+        log_info(f"[SCAN] {symbol} {timeframe}: BOS direction mismatch")
+        return []
+    if direction == "short" and bos.direction != "bearish":
+        log_info(f"[SCAN] {symbol} {timeframe}: BOS direction mismatch")
+        return []
 
-    for bos in bos_events:
-        # Find the most relevant OB for this signal direction
-        direction = ("long"  if last_sweep.direction == "down" else "short")
-        ob = get_nearest_ob(obs, direction, current_price)
+    # ── Run ALL confirmation layers ───────────────────────────────────────────
+    result: CheckResult = run_confirmations(
+        symbol=symbol, timeframe=timeframe, direction=direction,
+        df=df_s, sweep=last_sweep,
+        bos_candle_idx=bos.candle_idx,
+        bos_level=bos.broken_level,
+        obs=obs, fvgs=fvgs, zones=zones,
+    )
 
-        if ob:
-            log_info(f"[OB] using {ob.label()} for {direction.upper()} entry")
-        else:
-            log_info(f"[OB] no suitable OB found — falling back to sweep/BOS zone")
+    log_info(f"[CONF] {symbol} {timeframe} {direction.upper()} — {result.summary()}")
+    for line in result.passed:
+        log_info(f"[CONF]   ✅ {line}")
+    for line in result.failed:
+        log_info(f"[CONF]   ❌ {line}")
 
-        sig = None
-        if direction == "long":
-            sig = _build_long_signal(symbol, timeframe, context,
-                                     last_sweep, bos, ob, df_s)
-        else:
-            sig = _build_short_signal(symbol, timeframe, context,
-                                      last_sweep, bos, ob, df_s)
+    if not result.allowed:
+        log_info(f"[CONF] REJECTED by: {result.rejected_by}")
+        return []
 
-        if not sig:
-            continue
+    # ── Build entry zone ──────────────────────────────────────────────────────
+    entry = _build_entry(direction, last_sweep, bos, obs, fvgs, df_s)
+    if entry is None:
+        log_warn(f"[SCAN] {symbol} {timeframe}: confirmed but no entry zone — skip")
+        return []
 
-        # HTF filter
-        allowed, confluence = _apply_htf_filter(sig)
-        if not allowed:
-            continue
+    # ── Adjust TP to liquidity target if available ────────────────────────────
+    if result.liq_target is not None:
+        mid_entry = (entry["entry_low"] + entry["entry_high"]) / 2
+        risk      = abs(mid_entry - entry["stop"])
+        # Only use liq target if it gives RR >= minimum
+        target_rr = abs(result.liq_target - mid_entry) / risk if risk > 0 else 0
+        if target_rr >= config.MIN_RR_FOR_BONUS:
+            entry["tp"] = result.liq_target
+            log_info(f"[SCAN] TP set to liquidity target {result.liq_target:.2f} "
+                     f"(RR {target_rr:.2f})")
 
-        # Attach HTF metadata
-        if confluence:
-            sig.update(dict(
-                htf_bias=confluence.bias,
-                htf_aligned=confluence.aligned,
-                htf_opposing=confluence.opposing,
-                htf_tf=confluence.htf_tf,
-                htf_reason=confluence.reason,
-            ))
-        else:
-            sig.update(dict(
-                htf_bias="", htf_aligned=False,
-                htf_opposing=False, htf_tf="",
-                htf_reason="HTF filter disabled or data unavailable",
-            ))
+    # ── Assemble signal dict ──────────────────────────────────────────────────
+    fvg_note = " with FVG overlap" if entry["ob_has_fvg"] else ""
+    reason   = (
+        f"Swept {last_sweep.label()} | {bos.label()} | "
+        f"Entry: {entry['ob_label']}{fvg_note} | "
+        f"HTF {result.htf_tf} {result.htf_bias} | "
+        f"Zone: {result.pd_zone}"
+    )
 
-        signals.append(sig)
-        break
+    sig = dict(
+        # Core
+        symbol=symbol, timeframe=timeframe,
+        context=context.title(),
+        direction=direction,
+        sweep_desc=last_sweep.label(),
+        bos_desc=bos.label(),
+        reason=reason,
+        # Entry
+        entry_low=entry["entry_low"],
+        entry_high=entry["entry_high"],
+        stop=entry["stop"],
+        tp=entry["tp"],
+        ob_label=entry["ob_label"],
+        ob_has_fvg=entry["ob_has_fvg"],
+        # Confirmation metadata
+        conf_score=result.score,
+        conf_passed=result.passed,
+        conf_failed=result.failed,
+        conf_rejected_by="",
+        pd_zone=result.pd_zone,
+        liq_target=result.liq_target,
+        # HTF (for scoring.py compatibility)
+        htf_bias=result.htf_bias,
+        htf_aligned=(result.htf_bias in ("bullish", "bearish") and
+                     result.htf_tf != ""),
+        htf_opposing=False,
+        htf_tf=result.htf_tf,
+        htf_reason=f"HTF {result.htf_tf} {result.htf_bias}",
+    )
 
-    return signals
-
-
-def _get_bos_events_after(df: pd.DataFrame, after_idx: int) -> list[BOSEvent]:
-    from structure import detect_bos
-    return [e for e in detect_bos(df) if e.candle_idx > after_idx]
+    return [sig]

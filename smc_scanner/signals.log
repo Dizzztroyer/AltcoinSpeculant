@@ -268,3 +268,78 @@
   Reason     : Swept High @ 66516.0600, closed back below, BEARISH BOS @ 66731.0800 confirmed → bearish continuation. No OB found — using sweep/BOS range.
 ========================================================
 
+========================================================
+  SMC SIGNAL — 2026-04-03 09:00:11 UTC
+========================================================
+  Symbol     : BNB/USDT
+  Timeframe  : 15m
+  Context    : Bullish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 584.9800
+  Signal     : SHORT 🔴
+  Entry zone : 585.94 – 586.59
+  Stop Loss  : 589.49
+  Take Profit: 579.82
+  Reason     : Swept High @ 588.1600, bearish BEARISH BOS @ 584.9800 confirmed. Entry refined to Bearish OB +FVG [586.50 – 588.31] (FVG overlap)
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-03 11:00:09 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 1h
+  Context    : Bearish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 79.7900
+  Signal     : LONG 🟢
+  Entry zone : 78.25 – 78.35
+  Stop Loss  : 76.55
+  Take Profit: 81.81
+  Reason     : Swept Low @ 80.0800, bullish BULLISH BOS @ 79.7900 confirmed. Entry refined to Bullish OB +FVG [76.70 – 78.25] (FVG overlap)
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-03 13:00:11 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 15m
+  Context    : Bullish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH MBOS @ 79.8900
+  Signal     : SHORT 🔴
+  Entry zone : 79.8 – 79.89
+  Stop Loss  : 81.07
+  Take Profit: 77.39
+  Reason     : Swept High @ 80.4700, closed back below, BEARISH MBOS @ 79.8900 confirmed → bearish continuation. No OB found — using sweep/BOS range.
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-03 15:00:13 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 1h
+  Context    : Bearish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 79.7900
+  Signal     : LONG 🟢
+  Entry zone : 79.62 – 80.2
+  Stop Loss  : 76.55
+  Take Profit: 86.64
+  Reason     : Swept Low @ 80.0800, bullish BULLISH BOS @ 79.7900 confirmed. Entry refined to Bullish OB +FVG [76.70 – 78.25] (FVG overlap)
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-03 16:00:10 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 1h
+  Context    : Bearish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 79.7900
+  Signal     : LONG 🟢
+  Entry zone : 79.62 – 80.14
+  Stop Loss  : 76.55
+  Take Profit: 86.55
+  Reason     : Swept Low @ 80.0800, bullish BULLISH BOS @ 79.7900 confirmed. Entry refined to Bullish OB +FVG [76.70 – 78.25] (FVG overlap)
+========================================================
+

@@ -95,3 +95,30 @@ OB_FVG_SEARCH_RANGE    = 1.5     # search 1.5× OB height outside OB for FVG
 # ── J. Virtual Portfolio ───────────────────────────────────────────────────────
 VIRTUAL_BALANCE      = 100.0   # starting balance in USD
 RISK_PER_TRADE_PCT   = 0.01    # 1% risk per trade
+
+# ── K. Multi-layer confirmation engine ────────────────────────────────────────
+# Minimum total score to allow a trade (0-100)
+CONFIRMATION_MIN_SCORE           = 70
+
+# Hard block flags — set False to downgrade from hard-block to score penalty
+CONFIRMATION_HTF_MANDATORY       = True   # block if HTF opposes
+CONFIRMATION_SWEEP_MANDATORY     = True   # block if sweep is low quality
+CONFIRMATION_BOS_MANDATORY       = True   # block if BOS is weak
+CONFIRMATION_OB_MANDATORY        = True   # block if no OB or FVG found
+CONFIRMATION_PD_MANDATORY        = False  # premium/discount (softer)
+CONFIRMATION_LIQ_TARGET_MANDATORY = False # liquidity target (softer)
+
+# Sweep quality thresholds
+SWEEP_WICK_DOMINANCE      = 0.55   # wick must be >= 55% of candle range
+
+# BOS strength thresholds
+BOS_MIN_BODY_ATR_RATIO    = 0.8    # BOS body must be >= 0.8× ATR
+
+# Premium/Discount zone boundaries
+# price at < PD_DISCOUNT_LEVEL → discount zone (good for longs)
+# price at > PD_PREMIUM_LEVEL  → premium zone  (good for shorts)
+PD_DISCOUNT_LEVEL         = 0.35   # lower 35% of range
+PD_PREMIUM_LEVEL          = 0.65   # upper 35% of range
+
+# Minimum distance from current price to liquidity target
+CONFIRMATION_MIN_TARGET_DISTANCE = 0.005  # 0.5% minimum
