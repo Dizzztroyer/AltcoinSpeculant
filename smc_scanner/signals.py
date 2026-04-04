@@ -151,6 +151,12 @@ def scan_for_signals(symbol: str, timeframe: str,
         log_info(f"[CONF] REJECTED by: {result.rejected_by}")
         return []
 
+    # ── Kill zone check (runs only when confirmation passed) ──────────────────
+    from killzones import check_killzone
+    kz_result = check_killzone()
+    if not kz_result.allowed:
+        return []   # only blocks when KILLZONE_MODE = "filter"
+
     # ── Build entry zone ──────────────────────────────────────────────────────
     entry = _build_entry(direction, last_sweep, bos, obs, fvgs, df_s)
     if entry is None:
