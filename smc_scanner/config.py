@@ -8,17 +8,18 @@ API_SECRET = ""
 
 # ── B. Scanner settings ───────────────────────────────────────────────────────
 SYMBOLS = [
-    "BTC/USDT",
-    "ETH/USDT",
-    "SOL/USDT",
-    "BNB/USDT",
-    # Added symbols
-    "XRP/USDT",
-    "AVAX/USDT",
-    "DOGE/USDT",
+    # Tier 1 — high WR in backtest, keep always
+    "BTC/USDT",    # 60% WR on 1h
+    "ETH/USDT",    # 55% WR on 1h
+    "BNB/USDT",    # 50% WR
+    "DOGE/USDT",   # 67% WR (small sample, watch)
+    # Tier 2 — added back for sample size; revisit after 200+ trades
+    "XRP/USDT",    # 25% WR was on 15m (broken TF) — test on 1h/4h
+    "SOL/USDT",    # 20% WR was on 15m — retest on higher TF
+    # Removed: AVAX/USDT (10% WR, broken on all TFs)
 ]
 
-TIMEFRAMES = ["15m", "1h"]
+TIMEFRAMES = ["1h", "4h"]   # 15m removed (15% WR), 4h added for structure clarity
 
 # Higher-timeframe map used by scoring
 HTF_MAP = {
@@ -31,7 +32,7 @@ HTF_MAP = {
     "1d":  "1w",
 }
 
-CANDLE_LIMIT          = 200
+CANDLE_LIMIT          = 300   # increased for 4h context depth
 SCAN_INTERVAL_MINUTES = 30    # run every 30 minutes, aligned to :00 and :30
 
 SWING_LOOKBACK    = 5
@@ -52,7 +53,7 @@ SIGNAL_EXPIRY_HOURS       = 48
 EVALUATION_LOOKAHEAD_BARS = 100
 
 # ── E. Scoring settings ───────────────────────────────────────────────────────
-ALERT_SCORE_THRESHOLD = 60
+ALERT_SCORE_THRESHOLD = 75
 MIN_RR_FOR_BONUS      = 2.0
 STRONG_RR_BONUS       = 2.5
 
@@ -66,8 +67,8 @@ DEDUP_LOOKBACK_HOURS = 6
 
 # ── H. Telegram alerts ────────────────────────────────────────────────────────
 TELEGRAM_ENABLED   = True
-TELEGRAM_BOT_TOKEN = "**********************"
-TELEGRAM_CHAT_ID   = "******"
+TELEGRAM_BOT_TOKEN = "****************************************"
+TELEGRAM_CHAT_ID   = "**********"
 
 # ── Output ────────────────────────────────────────────────────────────────────
 SHOW_CHART = False
@@ -106,7 +107,7 @@ RISK_PER_TRADE_PCT   = 0.01    # 1% risk per trade
 
 # ── K. Multi-layer confirmation engine ────────────────────────────────────────
 # Minimum total score to allow a trade (0-100)
-CONFIRMATION_MIN_SCORE           = 70
+CONFIRMATION_MIN_SCORE           = 75   # 70-74 had 29% WR so raise, but 80 gives too few trades
 
 # Hard block flags — set False to downgrade from hard-block to score penalty
 CONFIRMATION_HTF_MANDATORY       = True   # block if HTF opposes
@@ -141,3 +142,15 @@ KILLZONE_MODE = "log"
 # ── M. Backtesting ────────────────────────────────────────────────────────────
 BACKTEST_DAYS       = 90    # default lookback period in days
 BACKTEST_WALK_STEP  = 3     # bars to advance per iteration (higher = faster)
+
+# ── N. Trailing stop ──────────────────────────────────────────────────────────
+# Once price moves TRAILING_STOP_TRIGGER_R in our favour,
+# move stop to breakeven. Prevents -1R losses on trades that moved 1R+ our way.
+# Set to 0 to disable.
+TRAILING_STOP_ENABLED   = True
+TRAILING_STOP_TRIGGER_R = 1.0    # move SL to BE when price reaches +1R
+TRAILING_STOP_LOCK_R    = 0.0    # lock in 0R (breakeven) when triggered
+
+# ── O. Backtest settings ──────────────────────────────────────────────────────
+BACKTEST_DAYS       = 180   # 6 months for statistical validity (need 50+ trades)
+BACKTEST_WALK_STEP  = 2     # bars per iteration (lower = more signals caught)

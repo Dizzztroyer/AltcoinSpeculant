@@ -373,3 +373,33 @@
   Reason     : Swept Below lows (equal low) | BULLISH BOS @ 1.3196 | Entry: Bullish OB +FVG [1.30 – 1.31] with FVG overlap | HTF 1h bullish | Zone: equilibrium
 ========================================================
 
+========================================================
+  SMC SIGNAL — 2026-04-04 09:00:15 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH MBOS @ 80.1100
+  Signal     : SHORT 🔴
+  Entry zone : 79.34 – 80.92
+  Stop Loss  : 81.93
+  Take Profit: 76.52
+  Reason     : Swept Above highs (high) | BEARISH MBOS @ 80.1100 | Entry: Bearish OB +FVG [80.92 – 81.77] with FVG overlap | HTF 4h bearish | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-04 10:30:14 UTC
+========================================================
+  Symbol     : XRP/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 1.3124
+  Signal     : SHORT 🔴
+  Entry zone : 1.33 – 1.35
+  Stop Loss  : 1.36
+  Take Profit: 1.3
+  Reason     : Swept Above highs (high) | BEARISH BOS @ 1.3124 | Entry: Bearish OB +FVG [1.35 – 1.36] with FVG overlap | HTF 4h bearish | Zone: discount
+========================================================
+

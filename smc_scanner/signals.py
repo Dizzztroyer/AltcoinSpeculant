@@ -47,18 +47,10 @@ def _build_entry(direction: str,
         ob_label   = ob.label()
         ob_has_fvg = ob.has_fvg
     else:
-        # OB not usable — try standalone FVG
-        fvg_type   = "bullish" if direction == "long" else "bearish"
-        candidates = [f for f in fvgs if f.fvg_type == fvg_type and not f.filled]
-        if not candidates:
-            return None   # no entry zone at all
-        fvg        = candidates[-1]
-        entry_low  = fvg.gap_low
-        entry_high = fvg.gap_high
-        stop       = (sweep.sweep_low  * (1 - config.DEFAULT_SL_BUFFER) if direction == "long"
-                      else sweep.sweep_high * (1 + config.DEFAULT_SL_BUFFER))
-        ob_label   = f"FVG [{fvg.gap_low:.2f}–{fvg.gap_high:.2f}]"
-        ob_has_fvg = True
+        # FVG-only entries showed 0% win rate in backtesting — require OB
+        # An OB provides a structural reason for price to react;
+        # a standalone FVG alone does not have enough conviction.
+        return None
 
     if entry_high <= entry_low:
         entry_high = entry_low * 1.001

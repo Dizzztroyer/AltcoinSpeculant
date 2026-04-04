@@ -265,6 +265,25 @@ def _evaluate_trade(sig: dict, future: pd.DataFrame,
         else:
             mae = -mae if worst > mid_entry else mae
 
+        # Trailing stop
+        if getattr(config, "TRAILING_STOP_ENABLED", False):
+            trigger_r = getattr(config, "TRAILING_STOP_TRIGGER_R", 1.0)
+            lock_r    = getattr(config, "TRAILING_STOP_LOCK_R", 0.0)
+            price_risk = abs(mid_entry - stop_loss)
+            if price_risk > 0:
+                if direction == "long":
+                    moved_r = (h - mid_entry) / price_risk
+                    if moved_r >= trigger_r:
+                        new_sl = mid_entry + lock_r * price_risk
+                        if new_sl > stop_loss:
+                            stop_loss = new_sl
+                else:
+                    moved_r = (mid_entry - l) / price_risk
+                    if moved_r >= trigger_r:
+                        new_sl = mid_entry - lock_r * price_risk
+                        if new_sl < stop_loss:
+                            stop_loss = new_sl
+
         # TP / SL check
         tp_hit = (direction == "long"  and h >= take_profit) or \
                  (direction == "short" and l <= take_profit)
@@ -440,7 +459,7 @@ def generate_backtest_html(results: list[BacktestResult],
     for t in all_trades:
         balance += balance * 0.01 * t.pnl_r
         eq_dates.append(t.signal_time[:10] or str(len(eq_dates)))
-        eq_vals.append(round(balance, 2))
+        eq_vals.append(float(round(balance, 2)))
 
     # Trade rows
     rows_html = ""
@@ -475,6 +494,9 @@ def generate_backtest_html(results: list[BacktestResult],
     exp_r = round(total_r / decisive, 2) if decisive else 0
     sign  = "+" if total_r >= 0 else ""
 
+    import json
+    json_dates = json.dumps(eq_dates)
+    json_vals  = json.dumps([float(v) for v in eq_vals])
     html = f"""<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8">
 <title>SMC Backtest Report</title>
@@ -521,8 +543,8 @@ h2{{color:#58a6ff;margin:16px 0 10px;font-size:14px}}
 <script>
 new Chart(document.getElementById('eq'),{{
   type:'line',
-  data:{{labels:{eq_dates},datasets:[{{
-    data:{eq_vals},borderColor:'#58a6ff',
+  data:{{labels:{json_dates},datasets:[{{
+    data:{json_vals},borderColor:'#58a6ff',
     backgroundColor:'rgba(88,166,255,0.08)',
     fill:true,tension:0.3,pointRadius:2,
   }}]}},
