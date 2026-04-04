@@ -66,7 +66,7 @@ DEDUP_LOOKBACK_HOURS = 6
 
 # ── H. Telegram alerts ────────────────────────────────────────────────────────
 TELEGRAM_ENABLED   = True
-TELEGRAM_BOT_TOKEN = "*********************"
+TELEGRAM_BOT_TOKEN = "**********************"
 TELEGRAM_CHAT_ID   = "******"
 
 # ── Output ────────────────────────────────────────────────────────────────────
