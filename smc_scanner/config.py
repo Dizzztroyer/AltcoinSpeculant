@@ -65,9 +65,9 @@ VOLUME_SPIKE_MULTIPLIER    = 1.5
 DEDUP_LOOKBACK_HOURS = 6
 
 # ── H. Telegram alerts ────────────────────────────────────────────────────────
-TELEGRAM_ENABLED   = False
-TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"
-TELEGRAM_CHAT_ID   = "YOUR_CHAT_ID_HERE"
+TELEGRAM_ENABLED   = True
+TELEGRAM_BOT_TOKEN = "8639493835:AAGgg8Qe8sF5mp4DPNxyELxk_uS8YBuFjtQ"
+TELEGRAM_CHAT_ID   = "455763669"
 
 # ── Output ────────────────────────────────────────────────────────────────────
 SHOW_CHART = False
@@ -130,3 +130,14 @@ PD_PREMIUM_LEVEL          = 0.65   # upper 35% of range
 
 # Minimum distance from current price to liquidity target
 CONFIRMATION_MIN_TARGET_DISTANCE = 0.005  # 0.5% minimum
+# ── L. Kill Zones ─────────────────────────────────────────────────────────────
+# Modes:
+#   "log"    — always allow, but log KZ status to console (safe to start with)
+#   "filter" — block signals outside KZ (strict, fewer signals)
+#   "score"  — affect scoring only (+10 inside, -5 outside), no hard block
+#   "off"    — completely disabled
+KILLZONE_MODE = "log"
+
+# ── M. Backtesting ────────────────────────────────────────────────────────────
+BACKTEST_DAYS       = 90    # default lookback period in days
+BACKTEST_WALK_STEP  = 3     # bars to advance per iteration (higher = faster)

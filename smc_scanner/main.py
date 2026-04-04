@@ -41,6 +41,12 @@ def parse_args():
     p.add_argument("--limit",     type=int, default=None)
     p.add_argument("--summary",   action="store_true")
     p.add_argument("--dashboard", action="store_true")
+    p.add_argument("--backtest",  action="store_true",
+                   help="Run walk-forward backtest and exit")
+    p.add_argument("--bt-days",   type=int, default=None,
+                   help="Backtest days (default: config.BACKTEST_DAYS)")
+    p.add_argument("--bt-symbol", default=None)
+    p.add_argument("--bt-tf",     default=None)
     p.add_argument("--report",    action="store_true",
                    help="Print daily report immediately and exit")
     return p.parse_args()
@@ -153,6 +159,25 @@ def main():
 
     if args.summary:
         journal.print_summary()
+        return
+
+    if args.backtest:
+        from backtesting import run_backtest, run_full_backtest, \
+            print_backtest_report, generate_backtest_html
+        import webbrowser
+        from pathlib import Path
+        days = args.bt_days or getattr(config, "BACKTEST_DAYS", 90)
+        syms = [args.bt_symbol] if args.bt_symbol else                [args.symbol]    if args.symbol     else config.SYMBOLS
+        tfs  = [args.bt_tf]    if args.bt_tf     else                [args.tf]       if args.tf         else config.TIMEFRAMES
+        log_info(f"[BT] Running backtest: {syms} × {tfs} × {days}d")
+        results = []
+        for sym in syms:
+            for tf in tfs:
+                results.append(run_backtest(sym, tf, days=days,
+                    walk_step=getattr(config, "BACKTEST_WALK_STEP", 3)))
+        print_backtest_report(results)
+        path = generate_backtest_html(results)
+        webbrowser.open(f"file://{Path(path).resolve()}")
         return
 
     if args.report:

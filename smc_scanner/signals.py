@@ -199,6 +199,10 @@ def scan_for_signals(symbol: str, timeframe: str,
         conf_rejected_by="",
         pd_zone=result.pd_zone,
         liq_target=result.liq_target,
+        # Kill zone metadata
+        kz_in_zone=kz_result.in_killzone,
+        kz_zone_name=kz_result.zone_name,
+        kz_quality=kz_result.zone_quality,
         # HTF (for scoring.py compatibility)
         htf_bias=result.htf_bias,
         htf_aligned=(result.htf_bias in ("bullish", "bearish") and

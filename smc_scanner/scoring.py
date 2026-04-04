@@ -29,6 +29,18 @@ def score_signal(sig: dict, df: pd.DataFrame) -> tuple[int, str]:
     reasons += [f"  ✅ {p}" for p in passed]
     reasons += [f"  ❌ {f}" for f in failed]
 
+    # ── Kill zone bonus ──────────────────────────────────────────────────────
+    kz_mode = getattr(config, "KILLZONE_MODE", "log")
+    if kz_mode == "score":
+        from killzones import KZResult, kz_score_bonus
+        kz_quality = sig.get("kz_quality", 0)
+        kz_in_zone = sig.get("kz_in_zone", True)
+        kz_r = type("R", (), {"in_killzone": kz_in_zone, "zone_quality": kz_quality})()
+        kz_pts = kz_score_bonus(kz_r)
+        score += kz_pts
+        if kz_pts != 0:
+            reasons.append(f"{'+' if kz_pts>=0 else ''}{kz_pts} KZ ({sig.get('kz_zone_name','?')})")
+
     # ── Deduplication penalty ─────────────────────────────────────────────────
     recent = journal.get_recent_signals(
         sig["symbol"], sig["timeframe"], sig["direction"],
