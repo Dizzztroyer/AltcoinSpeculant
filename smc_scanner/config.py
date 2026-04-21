@@ -70,8 +70,8 @@ DEDUP_LOOKBACK_HOURS = 6
 
 # ── H. Telegram alerts ────────────────────────────────────────────────────────
 TELEGRAM_ENABLED   = True
-TELEGRAM_BOT_TOKEN = "8639493835:AAGl7b8ybl4E417qzEr3KLhNmfIjLIVq9LA"
-TELEGRAM_CHAT_ID   = "-1003716382089"
+TELEGRAM_BOT_TOKEN = "86*****3835:****************fIj*****LA"
+TELEGRAM_CHAT_ID   = "**************"
 # ── Output ────────────────────────────────────────────────────────────────────
 SHOW_CHART = False
 LOG_FILE   = "signals.log"
