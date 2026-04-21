@@ -17,18 +17,21 @@ SYMBOLS = [
     "XRP/USDT",    # 25% WR was on 15m (broken TF) — test on 1h/4h
     "SOL/USDT",    # 20% WR was on 15m — retest on higher TF
     # Removed: AVAX/USDT (10% WR, broken on all TFs)
+    "LINK/USDT",   #это сам уже добавил
 ]
 
-TIMEFRAMES = ["1h", "4h"]   # 15m removed (15% WR), 4h added for structure clarity
+TIMEFRAMES = ["15m", "30m", "1h", "2h", "4h", "8h", "1d"]   # 15m removed (15% WR), 4h added for structure clarity
 
 # Higher-timeframe map used by scoring
 HTF_MAP = {
     "1m":  "15m",
     "5m":  "15m",
     "15m": "1h",
-    "30m": "4h",
+    "30m": "1h",   # лучше чем 4h (слишком далеко было)
     "1h":  "4h",
+    "2h":  "4h",
     "4h":  "1d",
+    "8h":  "1d",
     "1d":  "1w",
 }
 
@@ -67,9 +70,8 @@ DEDUP_LOOKBACK_HOURS = 6
 
 # ── H. Telegram alerts ────────────────────────────────────────────────────────
 TELEGRAM_ENABLED   = True
-TELEGRAM_BOT_TOKEN = "****************************************"
-TELEGRAM_CHAT_ID   = "**********"
-
+TELEGRAM_BOT_TOKEN = "8639493835:AAGl7b8ybl4E417qzEr3KLhNmfIjLIVq9LA"
+TELEGRAM_CHAT_ID   = "-1003716382089"
 # ── Output ────────────────────────────────────────────────────────────────────
 SHOW_CHART = False
 LOG_FILE   = "signals.log"
@@ -114,7 +116,7 @@ CONFIRMATION_HTF_MANDATORY       = True   # block if HTF opposes
 CONFIRMATION_SWEEP_MANDATORY     = True   # block if sweep is low quality
 CONFIRMATION_BOS_MANDATORY       = True   # block if BOS is weak
 CONFIRMATION_OB_MANDATORY        = True   # block if no OB or FVG found
-CONFIRMATION_PD_MANDATORY        = False  # premium/discount (softer)
+CONFIRMATION_PD_MANDATORY        = True   # MANDATORY: SHORT only in premium/eq, LONG only in discount/eq
 CONFIRMATION_LIQ_TARGET_MANDATORY = False # liquidity target (softer)
 
 # Sweep quality thresholds
@@ -126,8 +128,9 @@ BOS_MIN_BODY_ATR_RATIO    = 0.8    # BOS body must be >= 0.8× ATR
 # Premium/Discount zone boundaries
 # price at < PD_DISCOUNT_LEVEL → discount zone (good for longs)
 # price at > PD_PREMIUM_LEVEL  → premium zone  (good for shorts)
-PD_DISCOUNT_LEVEL         = 0.35   # lower 35% of range
-PD_PREMIUM_LEVEL          = 0.65   # upper 35% of range
+PD_DISCOUNT_LEVEL         = 0.40   # lower 40% = discount zone (longs only)
+PD_PREMIUM_LEVEL          = 0.60   # upper 40% = premium zone (shorts only)
+# Equilibrium = 40-60% = allowed for both directions but no bonus
 
 # Minimum distance from current price to liquidity target
 CONFIRMATION_MIN_TARGET_DISTANCE = 0.005  # 0.5% minimum
@@ -154,3 +157,4 @@ TRAILING_STOP_LOCK_R    = 0.0    # lock in 0R (breakeven) when triggered
 # ── O. Backtest settings ──────────────────────────────────────────────────────
 BACKTEST_DAYS       = 180   # 6 months for statistical validity (need 50+ trades)
 BACKTEST_WALK_STEP  = 2     # bars per iteration (lower = more signals caught)
+BACKTEST_INTRABAR_POLICY = "conservative"  # conservative | optimistic | close_bias | open_distance

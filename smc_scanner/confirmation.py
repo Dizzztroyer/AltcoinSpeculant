@@ -233,8 +233,8 @@ def _check_htf(symbol: str, timeframe: str,
         return 25, confluence.bias, confluence.htf_tf
     if confluence.opposing:
         return 0, confluence.bias, confluence.htf_tf
-    # neutral / range — partial credit
-    return 10, confluence.bias, confluence.htf_tf
+    # range HTF = no directional conviction = 0 points (will be blocked by mandatory check)
+    return 0, confluence.bias, confluence.htf_tf
 
 
 def _check_sweep_quality(sweep: SweepEvent,
@@ -451,14 +451,20 @@ def _check_premium_discount(df: pd.DataFrame,
 
     detail = f"price at {position_pct:.0%} of range [{range_low:.2f}–{range_high:.2f}]"
 
-    if direction == "long" and zone == "discount":
-        return 10, zone, detail
-    elif direction == "short" and zone == "premium":
-        return 10, zone, detail
-    elif zone == "equilibrium":
-        return 5, zone, detail   # neutral — partial credit
-    else:
-        return 0, zone, detail   # wrong side
+    if direction == "long":
+        if zone == "discount":
+            return 10, zone, detail   # ideal — buying at discount
+        elif zone == "equilibrium":
+            return 5, zone, detail    # acceptable
+        else:  # premium — buying at top, dangerous
+            return 0, zone, detail
+    else:  # short
+        if zone == "premium":
+            return 10, zone, detail   # ideal — selling at premium
+        elif zone == "equilibrium":
+            return 5, zone, detail    # acceptable
+        else:  # discount — shorting at bottom, dangerous
+            return 0, zone, detail
 
 
 def _check_liquidity_target(df: pd.DataFrame,
