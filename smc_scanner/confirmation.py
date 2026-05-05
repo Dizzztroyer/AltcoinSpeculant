@@ -29,9 +29,11 @@ import pandas as pd
 
 import config
 from orderblocks import FairValueGap, OrderBlock, find_fvgs, find_order_blocks
-from structure import find_swings, get_market_context, get_htf_confluence
+from structure import (find_swings, get_market_context,
+                       get_htf_confluence, get_deep_htf_confluence)
 from liquidity import SweepEvent, LiquidityZone
 from utils import log_info, atr
+from patterns import analyse_patterns, PatternContext
 
 
 # ── Result dataclass ───────────────────────────────────────────────────────────
@@ -66,6 +68,7 @@ class CheckResult:
     sweep_score:  int   = 0
     bos_score:    int   = 0
     ob_score:     int   = 0
+    pattern_ctx:  object | None = None   # PatternContext (patterns.py)
 
     def summary(self) -> str:
         status = "✅ ALLOWED" if self.allowed else f"❌ BLOCKED ({self.rejected_by})"
@@ -210,6 +213,50 @@ def run_confirmations(
     # ─────────────────────────────────────────────────────────────────────────
     _finalise(r, total)
 
+    # ─────────────────────────────────────────────────────────────────────────
+    # LAYER 7 — INSTITUTIONAL PATTERNS (QM / Fakeout / SR-flip / CP / MPL)
+    # Runs only when the signal has already passed layers 1-6.
+    # Can add/subtract score and hard-block fakeout setups.
+    # ─────────────────────────────────────────────────────────────────────────
+    try:
+        from liquidity import SweepEvent as _SE
+        if sweep is not None:
+            sweep_level = sweep.zone.level
+            sweep_idx   = sweep.candle_idx
+        else:
+            sweep_level = bos_level
+            sweep_idx   = bos_candle_idx
+
+        pat_ctx = analyse_patterns(
+            df=df, direction=direction,
+            sweep_candle_idx=sweep_idx,
+            sweep_level=sweep_level,
+            bos_candle_idx=bos_candle_idx,
+            bos_level=bos_level,
+        )
+        r.pattern_ctx = pat_ctx
+
+        # Hard block (fakeout with high confidence)
+        if pat_ctx.is_hard_blocked:
+            r.allowed     = False
+            r.rejected_by = (f"FAKEOUT/{pat_ctx.fakeout.fakeout_type} "
+                             f"(conf={pat_ctx.fakeout.confidence:.0%})")
+            r.failed.append(f"Pattern hard-block: {pat_ctx.fakeout.description}")
+            return r
+
+        # Score adjustment
+        adj = pat_ctx.net_score_adjustment
+        if adj != 0:
+            r.score = max(0, min(100, r.score + adj))
+            for ln in pat_ctx.summary_lines():
+                if adj > 0:
+                    r.passed.append(f"Pattern: {ln}")
+                else:
+                    r.failed.append(f"Pattern: {ln}")
+    except Exception as _pat_exc:
+        log_info(f"[PATTERN] error (non-fatal): {_pat_exc}")
+
+    # Re-check score threshold after pattern adjustment
     if r.score < config.CONFIRMATION_MIN_SCORE:
         r.allowed     = False
         r.rejected_by = f"SCORE ({r.score} < {config.CONFIRMATION_MIN_SCORE})"
@@ -222,19 +269,47 @@ def run_confirmations(
 def _check_htf(symbol: str, timeframe: str,
                direction: str) -> tuple[int, str, str]:
     """
-    Returns (points, htf_bias, htf_tf).
-    25 pts if aligned, 0 if opposing or unavailable.
-    """
-    confluence = get_htf_confluence(symbol, direction, timeframe)
-    if confluence is None:
-        return 0, "unavailable", ""
+    HTF alignment check.
 
-    if confluence.aligned:
-        return 25, confluence.bias, confluence.htf_tf
-    if confluence.opposing:
+    When DEEP_HTF_ENABLED=True (default): checks 2-3 HTF layers
+    (e.g. 4h + 1d + 1w for a 1h signal) and scores each proportionally.
+    Provides richer context than a single HTF level.
+
+    When DEEP_HTF_ENABLED=False: falls back to the original single-layer check.
+
+    Returns (points, primary_bias, htf_tf_description).
+    """
+    use_deep = getattr(config, "DEEP_HTF_ENABLED", True)
+
+    if use_deep:
+        result = get_deep_htf_confluence(symbol, direction, timeframe)
+
+        # hard_opposing = any layer directly opposes → treat as 0 pts
+        # (mandatory block will fire if CONFIRMATION_HTF_MANDATORY=True)
+        if result.hard_opposing and len(result.aligned_layers) == 0:
+            # All opposing, none aligned
+            primary_bias = result.opposing_layers[0][1] if result.opposing_layers else "opposing"
+            htf_desc = result.summary[:60]
+            return 0, primary_bias, htf_desc
+
+        # Partial opposing: reduce score but don't fully block
+        # (hard block only when ALL layers oppose, handled above)
+        primary_bias = (result.aligned_layers[0][1]  if result.aligned_layers
+                        else result.neutral_layers[0][1] if result.neutral_layers
+                        else "range")
+        htf_desc = result.summary[:80]
+        return result.total_pts, primary_bias, htf_desc
+
+    else:
+        # Original single-layer logic
+        confluence = get_htf_confluence(symbol, direction, timeframe)
+        if confluence is None:
+            return 0, "unavailable", ""
+        if confluence.aligned:
+            return 25, confluence.bias, confluence.htf_tf
+        if confluence.opposing:
+            return 0, confluence.bias, confluence.htf_tf
         return 0, confluence.bias, confluence.htf_tf
-    # range HTF = no directional conviction = 0 points (will be blocked by mandatory check)
-    return 0, confluence.bias, confluence.htf_tf
 
 
 def _check_sweep_quality(sweep: SweepEvent,
@@ -451,20 +526,14 @@ def _check_premium_discount(df: pd.DataFrame,
 
     detail = f"price at {position_pct:.0%} of range [{range_low:.2f}–{range_high:.2f}]"
 
-    if direction == "long":
-        if zone == "discount":
-            return 10, zone, detail   # ideal — buying at discount
-        elif zone == "equilibrium":
-            return 5, zone, detail    # acceptable
-        else:  # premium — buying at top, dangerous
-            return 0, zone, detail
-    else:  # short
-        if zone == "premium":
-            return 10, zone, detail   # ideal — selling at premium
-        elif zone == "equilibrium":
-            return 5, zone, detail    # acceptable
-        else:  # discount — shorting at bottom, dangerous
-            return 0, zone, detail
+    if direction == "long" and zone == "discount":
+        return 10, zone, detail
+    elif direction == "short" and zone == "premium":
+        return 10, zone, detail
+    elif zone == "equilibrium":
+        return 5, zone, detail   # neutral — partial credit
+    else:
+        return 0, zone, detail   # wrong side
 
 
 def _check_liquidity_target(df: pd.DataFrame,

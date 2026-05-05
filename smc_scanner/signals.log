@@ -1303,3 +1303,1188 @@
   Reason     : Swept Above highs (equal high) | BEARISH MBOS @ 2300.0100 | Entry: Bearish OB +FVG [2399.52 – 2413.54] with FVG overlap | HTF 4h bearish | Zone: equilibrium
 ========================================================
 
+========================================================
+  SMC SIGNAL — 2026-04-21 20:00:45 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 4h
+  Context    : Bearish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH MBOS @ 85.0000
+  Signal     : SHORT 🔴
+  Entry zone : 84.6 – 85.17
+  Stop Loss  : 87.06
+  Take Profit: 80.53
+  Reason     : Swept Above highs (high) | BEARISH MBOS @ 85.0000 | Entry: Bearish OB +FVG [85.17 – 86.89] with FVG overlap | HTF 1d bearish | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-22 20:00:13 UTC
+========================================================
+  Symbol     : XRP/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH MBOS @ 1.4473
+  Signal     : SHORT 🔴
+  Entry zone : 1.44 – 1.45
+  Stop Loss  : 1.46
+  Take Profit: 1.41
+  Reason     : Swept Above highs (high) | BEARISH MBOS @ 1.4473 | Entry: Bearish OB +FVG [1.45 – 1.45] with FVG overlap | HTF 4h range | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-22 20:00:18 UTC
+========================================================
+  Symbol     : DOGE/USDT
+  Timeframe  : 15m
+  Context    : Bearish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 0.0968
+  Signal     : SHORT 🔴
+  Entry zone : 0.1 – 0.1
+  Stop Loss  : 0.1
+  Take Profit: 0.1
+  Reason     : Swept Above highs (high) | BEARISH BOS @ 0.0968 | Entry: Bearish OB +FVG [0.10 – 0.10] with FVG overlap | HTF 1h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-22 23:30:12 UTC
+========================================================
+  Symbol     : XRP/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH MBOS @ 1.4473
+  Signal     : SHORT 🔴
+  Entry zone : 1.44 – 1.44
+  Stop Loss  : 1.44
+  Take Profit: 1.41
+  Reason     : Swept Above highs (high) | BEARISH MBOS @ 1.4473 | Entry: Bearish OB [1.44 – 1.44] | HTF 4h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-23 00:00:13 UTC
+========================================================
+  Symbol     : ETH/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 2384.1700
+  Signal     : SHORT 🔴
+  Entry zone : 2374.63 – 2394.09
+  Stop Loss  : 2410.92
+  Take Profit: 2331.24
+  Reason     : Swept Above highs (high) | BEARISH BOS @ 2384.1700 | Entry: Bearish OB +FVG [2391.88 – 2406.11] with FVG overlap | HTF 4h range | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-23 00:00:17 UTC
+========================================================
+  Symbol     : XRP/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH MBOS @ 1.4473
+  Signal     : SHORT 🔴
+  Entry zone : 1.43 – 1.44
+  Stop Loss  : 1.44
+  Take Profit: 1.41
+  Reason     : Swept Above highs (high) | BEARISH MBOS @ 1.4473 | Entry: Bearish OB +FVG [1.44 – 1.44] with FVG overlap | HTF 4h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-23 12:00:16 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 15m
+  Context    : Bearish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH MBOS @ 9.2600
+  Signal     : LONG 🟢
+  Entry zone : 9.25 – 9.27
+  Stop Loss  : 9.19
+  Take Profit: 9.4
+  Reason     : Swept Below lows (low) | BULLISH MBOS @ 9.2600 | Entry: Bullish OB +FVG [9.21 – 9.24] with FVG overlap | HTF 1h range | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-23 15:00:15 UTC
+========================================================
+  Symbol     : XRP/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (equal low)
+  Structure  : BULLISH MBOS @ 1.4251
+  Signal     : LONG 🟢
+  Entry zone : 1.42 – 1.43
+  Stop Loss  : 1.41
+  Take Profit: 1.45
+  Reason     : Swept Below lows (equal low) | BULLISH MBOS @ 1.4251 | Entry: Bullish OB +FVG [1.41 – 1.42] with FVG overlap | HTF 4h bullish | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-23 15:00:19 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH MBOS @ 9.3500
+  Signal     : LONG 🟢
+  Entry zone : 9.31 – 9.35
+  Stop Loss  : 9.24
+  Take Profit: 9.68
+  Reason     : Swept Below lows (low) | BULLISH MBOS @ 9.3500 | Entry: Bullish OB +FVG [9.26 – 9.31] with FVG overlap | HTF 4h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-23 15:30:15 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH MBOS @ 9.3500
+  Signal     : LONG 🟢
+  Entry zone : 9.31 – 9.34
+  Stop Loss  : 9.24
+  Take Profit: 9.68
+  Reason     : Swept Below lows (low) | BULLISH MBOS @ 9.3500 | Entry: Bullish OB +FVG [9.26 – 9.31] with FVG overlap | HTF 4h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-23 16:00:16 UTC
+========================================================
+  Symbol     : BNB/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH MBOS @ 638.4300
+  Signal     : LONG 🟢
+  Entry zone : 629.71 – 631.73
+  Stop Loss  : 626.45
+  Take Profit: 648.79
+  Reason     : Swept Below lows (low) | BULLISH MBOS @ 638.4300 | Entry: Bullish OB +FVG [627.71 – 629.71] with FVG overlap | HTF 4h bullish | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-23 16:00:20 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH MBOS @ 9.3500
+  Signal     : LONG 🟢
+  Entry zone : 9.36 – 9.4
+  Stop Loss  : 9.24
+  Take Profit: 9.66
+  Reason     : Swept Below lows (low) | BULLISH MBOS @ 9.3500 | Entry: Bullish OB +FVG [9.26 – 9.31] with FVG overlap | HTF 4h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-23 17:00:16 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 15m
+  Context    : Bullish
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH MBOS @ 9.3600
+  Signal     : SHORT 🔴
+  Entry zone : 9.34 – 9.37
+  Stop Loss  : 9.42
+  Take Profit: 9.23
+  Reason     : Swept Above highs (equal high) | BEARISH MBOS @ 9.3600 | Entry: Bearish OB +FVG [9.37 – 9.40] with FVG overlap | HTF 1h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-24 03:30:09 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 15m
+  Context    : Bullish
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH BOS @ 77952.1600
+  Signal     : SHORT 🔴
+  Entry zone : 77750.41 – 78078.56
+  Stop Loss  : 78334.76
+  Take Profit: 77073.94
+  Reason     : Swept Above highs (equal high) | BEARISH BOS @ 77952.1600 | Entry: Bearish OB +FVG [78078.56 – 78178.40] with FVG overlap | HTF 1h bearish | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-24 08:30:11 UTC
+========================================================
+  Symbol     : BNB/USDT
+  Timeframe  : 15m
+  Context    : Range
+  Liq sweep  : Below lows (equal low)
+  Structure  : BULLISH MBOS @ 634.5000
+  Signal     : LONG 🟢
+  Entry zone : 635.59 – 637.57
+  Stop Loss  : 633.06
+  Take Profit: 643.62
+  Reason     : Swept Below lows (equal low) | BULLISH MBOS @ 634.5000 | Entry: Bullish OB +FVG [634.33 – 635.53] with FVG overlap | HTF 1h bullish | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-24 09:00:12 UTC
+========================================================
+  Symbol     : BNB/USDT
+  Timeframe  : 15m
+  Context    : Range
+  Liq sweep  : Below lows (equal low)
+  Structure  : BULLISH MBOS @ 634.5000
+  Signal     : LONG 🟢
+  Entry zone : 635.59 – 636.54
+  Stop Loss  : 633.06
+  Take Profit: 642.07
+  Reason     : Swept Below lows (equal low) | BULLISH MBOS @ 634.5000 | Entry: Bullish OB +FVG [634.33 – 635.53] with FVG overlap | HTF 1h bullish | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-24 11:30:11 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 1h
+  Context    : Bearish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH MBOS @ 78000.0000
+  Signal     : LONG 🟢
+  Entry zone : 77402.01 – 77804.23
+  Stop Loss  : 77247.21
+  Take Profit: 79472.82
+  Reason     : Swept Below lows (low) | BULLISH MBOS @ 78000.0000 | Entry: Bullish OB [77402.01 – 77804.23] | HTF 4h bullish | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-24 11:30:16 UTC
+========================================================
+  Symbol     : BNB/USDT
+  Timeframe  : 15m
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH MBOS @ 635.5500
+  Signal     : LONG 🟢
+  Entry zone : 635.44 – 636.6
+  Stop Loss  : 633.21
+  Take Profit: 643.41
+  Reason     : Swept Below lows (low) | BULLISH MBOS @ 635.5500 | Entry: Bullish OB +FVG [634.48 – 635.04] with FVG overlap | HTF 1h bullish | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-24 11:30:18 UTC
+========================================================
+  Symbol     : DOGE/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 0.0980
+  Signal     : LONG 🟢
+  Entry zone : 0.1 – 0.1
+  Stop Loss  : 0.1
+  Take Profit: 0.1
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 0.0980 | Entry: Bullish OB [0.10 – 0.10] | HTF 4h bullish | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-24 12:00:13 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 1h
+  Context    : Bearish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH MBOS @ 78000.0000
+  Signal     : LONG 🟢
+  Entry zone : 77784.0 – 78240.26
+  Stop Loss  : 77247.21
+  Take Profit: 79541.98
+  Reason     : Swept Below lows (low) | BULLISH MBOS @ 78000.0000 | Entry: Bullish OB +FVG [77402.01 – 77804.23] with FVG overlap | HTF 4h bullish | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-24 12:00:18 UTC
+========================================================
+  Symbol     : DOGE/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 0.0980
+  Signal     : LONG 🟢
+  Entry zone : 0.09 – 0.1
+  Stop Loss  : 0.09
+  Take Profit: 0.1
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 0.0980 | Entry: Bullish OB +FVG [0.09 – 0.09] with FVG overlap | HTF 4h bullish | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-24 12:30:12 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 1h
+  Context    : Bearish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH MBOS @ 78000.0000
+  Signal     : LONG 🟢
+  Entry zone : 77784.0 – 78176.11
+  Stop Loss  : 77247.21
+  Take Profit: 79472.82
+  Reason     : Swept Below lows (low) | BULLISH MBOS @ 78000.0000 | Entry: Bullish OB +FVG [77402.01 – 77804.23] with FVG overlap | HTF 4h bullish | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-24 13:01:23 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 1h
+  Context    : Bearish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH MBOS @ 78000.0000
+  Signal     : LONG 🟢
+  Entry zone : 77784.0 – 78016.51
+  Stop Loss  : 77247.21
+  Take Profit: 79472.82
+  Reason     : Swept Below lows (low) | BULLISH MBOS @ 78000.0000 | Entry: Bullish OB +FVG [77402.01 – 77804.23] with FVG overlap | HTF 4h bullish | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-24 15:00:14 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH MBOS @ 78000.0000
+  Signal     : LONG 🟢
+  Entry zone : 76416.24 – 77397.88
+  Stop Loss  : 75980.68
+  Take Profit: 78759.81
+  Reason     : Swept Below lows (low) | BULLISH MBOS @ 78000.0000 | Entry: Bullish OB +FVG [76132.95 – 76416.24] with FVG overlap | HTF 4h bullish | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-24 16:00:18 UTC
+========================================================
+  Symbol     : ETH/USDT
+  Timeframe  : 15m
+  Context    : Bullish
+  Liq sweep  : Below lows (equal low)
+  Structure  : BULLISH MBOS @ 2318.4000
+  Signal     : LONG 🟢
+  Entry zone : 2314.54 – 2319.23
+  Stop Loss  : 2297.01
+  Take Profit: 2356.64
+  Reason     : Swept Below lows (equal low) | BULLISH MBOS @ 2318.4000 | Entry: Bullish OB +FVG [2301.61 – 2313.55] with FVG overlap | HTF 1h range | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-24 16:00:24 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 15m
+  Context    : Range
+  Liq sweep  : Below lows (equal low)
+  Structure  : BULLISH MBOS @ 86.2300
+  Signal     : LONG 🟢
+  Entry zone : 86.09 – 86.25
+  Stop Loss  : 85.36
+  Take Profit: 87.79
+  Reason     : Swept Below lows (equal low) | BULLISH MBOS @ 86.2300 | Entry: Bullish OB +FVG [85.53 – 86.06] with FVG overlap | HTF 1h range | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-24 21:00:17 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH MBOS @ 86.5800
+  Signal     : LONG 🟢
+  Entry zone : 86.53 – 86.83
+  Stop Loss  : 86.08
+  Take Profit: 89.32
+  Reason     : Swept Below lows (low) | BULLISH MBOS @ 86.5800 | Entry: Bullish OB +FVG [86.25 – 86.53] with FVG overlap | HTF 4h bullish | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-25 11:30:16 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH MBOS @ 9.4300
+  Signal     : SHORT 🔴
+  Entry zone : 9.45 – 9.49
+  Stop Loss  : 9.51
+  Take Profit: 9.37
+  Reason     : Swept Above highs (equal high) | BEARISH MBOS @ 9.4300 | Entry: Bearish OB [9.45 – 9.49] | HTF 4h bearish | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-25 12:00:18 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH MBOS @ 9.4300
+  Signal     : SHORT 🔴
+  Entry zone : 9.4 – 9.46
+  Stop Loss  : 9.51
+  Take Profit: 9.27
+  Reason     : Swept Above highs (equal high) | BEARISH MBOS @ 9.4300 | Entry: Bearish OB +FVG [9.45 – 9.49] with FVG overlap | HTF 4h bearish | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-25 12:30:17 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH MBOS @ 9.4300
+  Signal     : SHORT 🔴
+  Entry zone : 9.41 – 9.46
+  Stop Loss  : 9.51
+  Take Profit: 9.29
+  Reason     : Swept Above highs (equal high) | BEARISH MBOS @ 9.4300 | Entry: Bearish OB +FVG [9.45 – 9.49] with FVG overlap | HTF 4h bearish | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-25 16:00:19 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH BOS @ 9.3700
+  Signal     : SHORT 🔴
+  Entry zone : 9.35 – 9.38
+  Stop Loss  : 9.46
+  Take Profit: 9.18
+  Reason     : Swept Above highs (equal high) | BEARISH BOS @ 9.3700 | Entry: Bearish OB +FVG [9.38 – 9.44] with FVG overlap | HTF 4h bearish | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-25 17:00:23 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH BOS @ 9.3700
+  Signal     : SHORT 🔴
+  Entry zone : 9.37 – 9.38
+  Stop Loss  : 9.46
+  Take Profit: 9.21
+  Reason     : Swept Above highs (equal high) | BEARISH BOS @ 9.3700 | Entry: Bearish OB +FVG [9.38 – 9.44] with FVG overlap | HTF 4h bearish | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-26 14:30:11 UTC
+========================================================
+  Symbol     : ETH/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 2337.6800
+  Signal     : LONG 🟢
+  Entry zone : 2324.19 – 2336.4
+  Stop Loss  : 2319.54
+  Take Profit: 2375.14
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 2337.6800 | Entry: Bullish OB [2324.19 – 2336.40] | HTF 4h bullish | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-27 01:00:12 UTC
+========================================================
+  Symbol     : ETH/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 2337.6800
+  Signal     : LONG 🟢
+  Entry zone : 2378.61 – 2389.48
+  Stop Loss  : 2348.82
+  Take Profit: 2454.49
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 2337.6800 | Entry: Bullish OB +FVG [2353.53 – 2380.00] with FVG overlap | HTF 4h bullish | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-27 02:00:11 UTC
+========================================================
+  Symbol     : ETH/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 2337.6800
+  Signal     : LONG 🟢
+  Entry zone : 2336.0 – 2344.23
+  Stop Loss  : 2319.54
+  Take Profit: 2413.83
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 2337.6800 | Entry: Bullish OB +FVG [2324.19 – 2336.40] with FVG overlap | HTF 4h bullish | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-27 05:30:13 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 9.3900
+  Signal     : SHORT 🔴
+  Entry zone : 9.5 – 9.51
+  Stop Loss  : 9.58
+  Take Profit: 9.25
+  Reason     : Swept Above highs (high) | BEARISH BOS @ 9.3900 | Entry: Bearish OB +FVG [9.47 – 9.56] with FVG overlap | HTF 4h range | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-27 06:00:12 UTC
+========================================================
+  Symbol     : BNB/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 630.5900
+  Signal     : SHORT 🔴
+  Entry zone : 637.11 – 638.18
+  Stop Loss  : 641.09
+  Take Profit: 625.0
+  Reason     : Swept Above highs (high) | BEARISH BOS @ 630.5900 | Entry: Bearish OB +FVG [635.73 – 639.81] with FVG overlap | HTF 4h bearish | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-27 15:30:12 UTC
+========================================================
+  Symbol     : BNB/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 625.1500
+  Signal     : SHORT 🔴
+  Entry zone : 625.0 – 628.56
+  Stop Loss  : 629.82
+  Take Profit: 615.0
+  Reason     : Swept Above highs (high) | BEARISH BOS @ 625.1500 | Entry: Bearish OB [625.00 – 628.56] | HTF 4h bearish | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-27 16:00:14 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 86.1900
+  Signal     : SHORT 🔴
+  Entry zone : 84.17 – 85.0
+  Stop Loss  : 86.0
+  Take Profit: 81.75
+  Reason     : Swept Above highs (high) | BEARISH BOS @ 86.1900 | Entry: Bearish OB +FVG [85.00 – 85.83] with FVG overlap | HTF 4h range | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-27 16:30:12 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 86.1900
+  Signal     : SHORT 🔴
+  Entry zone : 84.4 – 85.0
+  Stop Loss  : 86.0
+  Take Profit: 82.1
+  Reason     : Swept Above highs (high) | BEARISH BOS @ 86.1900 | Entry: Bearish OB +FVG [85.00 – 85.83] with FVG overlap | HTF 4h range | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-27 19:00:16 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 15m
+  Context    : Range
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH BOS @ 85.0500
+  Signal     : SHORT 🔴
+  Entry zone : 84.76 – 85.18
+  Stop Loss  : 86.0
+  Take Profit: 82.91
+  Reason     : Swept Above highs (equal high) | BEARISH BOS @ 85.0500 | Entry: Bearish OB +FVG [85.18 – 85.83] with FVG overlap | HTF 1h range | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-27 19:30:12 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 86.1900
+  Signal     : SHORT 🔴
+  Entry zone : 84.42 – 84.7
+  Stop Loss  : 84.87
+  Take Profit: 82.94
+  Reason     : Swept Above highs (high) | BEARISH BOS @ 86.1900 | Entry: Bearish OB [84.42 – 84.70] | HTF 4h range | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-27 19:30:14 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 15m
+  Context    : Bearish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH MBOS @ 9.1600
+  Signal     : SHORT 🔴
+  Entry zone : 9.16 – 9.19
+  Stop Loss  : 9.23
+  Take Profit: 9.07
+  Reason     : Swept Above highs (high) | BEARISH MBOS @ 9.1600 | Entry: Bearish OB +FVG [9.18 – 9.21] with FVG overlap | HTF 1h bearish | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-27 20:00:15 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 15m
+  Context    : Bearish
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH BOS @ 85.0500
+  Signal     : SHORT 🔴
+  Entry zone : 84.5 – 84.55
+  Stop Loss  : 84.78
+  Take Profit: 83.63
+  Reason     : Swept Above highs (equal high) | BEARISH BOS @ 85.0500 | Entry: Bearish OB +FVG [84.43 – 84.61] with FVG overlap | HTF 1h bearish | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-28 02:30:11 UTC
+========================================================
+  Symbol     : ETH/USDT
+  Timeframe  : 15m
+  Context    : Bullish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH MBOS @ 2299.4700
+  Signal     : SHORT 🔴
+  Entry zone : 2294.73 – 2312.82
+  Stop Loss  : 2331.92
+  Take Profit: 2247.48
+  Reason     : Swept Above highs (high) | BEARISH MBOS @ 2299.4700 | Entry: Bearish OB +FVG [2311.51 – 2327.27] with FVG overlap | HTF 1h bearish | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-28 07:00:14 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 15m
+  Context    : Bearish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH MBOS @ 76811.0100
+  Signal     : SHORT 🔴
+  Entry zone : 76763.71 – 76836.85
+  Stop Loss  : 77181.97
+  Take Profit: 76036.91
+  Reason     : Swept Above highs (high) | BEARISH MBOS @ 76811.0100 | Entry: Bearish OB +FVG [76885.97 – 77027.91] with FVG overlap | HTF 1h bearish | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-28 12:00:17 UTC
+========================================================
+  Symbol     : DOGE/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH MBOS @ 0.0990
+  Signal     : SHORT 🔴
+  Entry zone : 0.1 – 0.1
+  Stop Loss  : 0.1
+  Take Profit: 0.1
+  Reason     : Swept Above highs (high) | BEARISH MBOS @ 0.0990 | Entry: Bearish OB +FVG [0.10 – 0.10] with FVG overlap | HTF 4h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-28 16:00:20 UTC
+========================================================
+  Symbol     : DOGE/USDT
+  Timeframe  : 15m
+  Context    : Bearish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 0.0992
+  Signal     : LONG 🟢
+  Entry zone : 0.1 – 0.1
+  Stop Loss  : 0.1
+  Take Profit: 0.1
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 0.0992 | Entry: Bullish OB +FVG [0.10 – 0.10] with FVG overlap | HTF 1h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-29 04:00:18 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 9.2100
+  Signal     : LONG 🟢
+  Entry zone : 9.2 – 9.26
+  Stop Loss  : 9.13
+  Take Profit: 9.43
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 9.2100 | Entry: Bullish OB +FVG [9.15 – 9.20] with FVG overlap | HTF 4h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-29 05:00:15 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 9.2100
+  Signal     : LONG 🟢
+  Entry zone : 9.26 – 9.34
+  Stop Loss  : 9.13
+  Take Profit: 9.64
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 9.2100 | Entry: Bullish OB +FVG [9.15 – 9.20] with FVG overlap | HTF 4h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-29 05:30:13 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 9.2100
+  Signal     : LONG 🟢
+  Entry zone : 9.26 – 9.32
+  Stop Loss  : 9.13
+  Take Profit: 9.61
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 9.2100 | Entry: Bullish OB +FVG [9.15 – 9.20] with FVG overlap | HTF 4h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-29 10:00:16 UTC
+========================================================
+  Symbol     : BNB/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 627.5800
+  Signal     : LONG 🟢
+  Entry zone : 625.86 – 629.05
+  Stop Loss  : 623.75
+  Take Profit: 634.86
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 627.5800 | Entry: Bullish OB +FVG [625.00 – 626.73] with FVG overlap | HTF 4h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-29 10:30:15 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 1h
+  Context    : Bearish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 84.9300
+  Signal     : LONG 🟢
+  Entry zone : 84.75 – 85.27
+  Stop Loss  : 84.19
+  Take Profit: 86.65
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 84.9300 | Entry: Bullish OB +FVG [84.36 – 84.75] with FVG overlap | HTF 4h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-29 10:30:19 UTC
+========================================================
+  Symbol     : BNB/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 627.5800
+  Signal     : LONG 🟢
+  Entry zone : 625.86 – 628.5
+  Stop Loss  : 623.75
+  Take Profit: 634.04
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 627.5800 | Entry: Bullish OB +FVG [625.00 – 626.73] with FVG overlap | HTF 4h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-29 11:00:15 UTC
+========================================================
+  Symbol     : BNB/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 627.5800
+  Signal     : LONG 🟢
+  Entry zone : 625.86 – 627.46
+  Stop Loss  : 623.75
+  Take Profit: 632.79
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 627.5800 | Entry: Bullish OB +FVG [625.00 – 626.73] with FVG overlap | HTF 4h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-29 11:00:15 UTC
+========================================================
+  Symbol     : XRP/USDT
+  Timeframe  : 15m
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 1.3973
+  Signal     : LONG 🟢
+  Entry zone : 1.4 – 1.4
+  Stop Loss  : 1.39
+  Take Profit: 1.42
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 1.3973 | Entry: Bullish OB +FVG [1.39 – 1.40] with FVG overlap | HTF 1h range | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-29 14:00:16 UTC
+========================================================
+  Symbol     : XRP/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 1.3770
+  Signal     : SHORT 🔴
+  Entry zone : 1.39 – 1.4
+  Stop Loss  : 1.41
+  Take Profit: 1.37
+  Reason     : Swept Above highs (high) | BEARISH BOS @ 1.3770 | Entry: Bearish OB +FVG [1.39 – 1.41] with FVG overlap | HTF 4h bearish | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-29 15:00:13 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH MBOS @ 76972.3200
+  Signal     : SHORT 🔴
+  Entry zone : 77871.9 – 78872.42
+  Stop Loss  : 79551.18
+  Take Profit: 75666.6
+  Reason     : Swept Above highs (high) | BEARISH MBOS @ 76972.3200 | Entry: Bearish OB +FVG [78400.03 – 79392.40] with FVG overlap | HTF 4h range | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-29 16:00:16 UTC
+========================================================
+  Symbol     : ETH/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 2278.8400
+  Signal     : SHORT 🔴
+  Entry zone : 2329.13 – 2380.45
+  Stop Loss  : 2405.23
+  Take Profit: 2253.91
+  Reason     : Swept Above highs (high) | BEARISH BOS @ 2278.8400 | Entry: Bearish OB +FVG [2390.57 – 2400.43] with FVG overlap | HTF 4h bearish | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-29 19:00:12 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 76187.7500
+  Signal     : SHORT 🔴
+  Entry zone : 75524.4 – 75803.55
+  Stop Loss  : 76336.38
+  Take Profit: 74319.17
+  Reason     : Swept Above highs (high) | BEARISH BOS @ 76187.7500 | Entry: Bearish OB +FVG [75803.55 – 76184.01] with FVG overlap | HTF 4h range | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-29 19:30:12 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 76187.7500
+  Signal     : SHORT 🔴
+  Entry zone : 75591.83 – 75803.55
+  Stop Loss  : 76336.38
+  Take Profit: 74420.31
+  Reason     : Swept Above highs (high) | BEARISH BOS @ 76187.7500 | Entry: Bearish OB +FVG [75803.55 – 76184.01] with FVG overlap | HTF 4h range | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-30 03:00:13 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 15m
+  Context    : Bullish
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH MBOS @ 9.1700
+  Signal     : SHORT 🔴
+  Entry zone : 9.18 – 9.19
+  Stop Loss  : 9.22
+  Take Profit: 8.92
+  Reason     : Swept Above highs (equal high) | BEARISH MBOS @ 9.1700 | Entry: Bearish OB +FVG [9.17 – 9.20] with FVG overlap | HTF 1h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-30 05:00:13 UTC
+========================================================
+  Symbol     : XRP/USDT
+  Timeframe  : 15m
+  Context    : Bullish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH BOS @ 1.3677
+  Signal     : SHORT 🔴
+  Entry zone : 1.39 – 1.39
+  Stop Loss  : 1.4
+  Take Profit: 1.35
+  Reason     : Swept Above highs (high) | BEARISH BOS @ 1.3677 | Entry: Bearish OB +FVG [1.39 – 1.40] with FVG overlap | HTF 1h bearish | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-30 10:30:15 UTC
+========================================================
+  Symbol     : BNB/USDT
+  Timeframe  : 15m
+  Context    : Bearish
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH MBOS @ 616.5700
+  Signal     : SHORT 🔴
+  Entry zone : 617.74 – 619.11
+  Stop Loss  : 621.42
+  Take Profit: 610.26
+  Reason     : Swept Above highs (equal high) | BEARISH MBOS @ 616.5700 | Entry: Bearish OB +FVG [619.11 – 620.18] with FVG overlap | HTF 1h range | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-04-30 23:00:15 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH MBOS @ 9.0700
+  Signal     : SHORT 🔴
+  Entry zone : 9.28 – 9.33
+  Stop Loss  : 9.44
+  Take Profit: 8.92
+  Reason     : Swept Above highs (high) | BEARISH MBOS @ 9.0700 | Entry: Bearish OB +FVG [9.25 – 9.42] with FVG overlap | HTF 4h bearish | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-05-01 00:30:14 UTC
+========================================================
+  Symbol     : DOGE/USDT
+  Timeframe  : 15m
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 0.1069
+  Signal     : LONG 🟢
+  Entry zone : 0.11 – 0.11
+  Stop Loss  : 0.11
+  Take Profit: 0.11
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 0.1069 | Entry: Bullish OB +FVG [0.11 – 0.11] with FVG overlap | HTF 1h range | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-05-01 08:30:13 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 15m
+  Context    : Range
+  Liq sweep  : Below lows (equal low)
+  Structure  : BULLISH MBOS @ 9.1300
+  Signal     : LONG 🟢
+  Entry zone : 9.13 – 9.14
+  Stop Loss  : 9.04
+  Take Profit: 9.32
+  Reason     : Swept Below lows (equal low) | BULLISH MBOS @ 9.1300 | Entry: Bullish OB +FVG [9.06 – 9.10] with FVG overlap | HTF 1h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-05-01 20:30:13 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 15m
+  Context    : Range
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH BOS @ 9.1300
+  Signal     : SHORT 🔴
+  Entry zone : 9.12 – 9.14
+  Stop Loss  : 9.2
+  Take Profit: 8.99
+  Reason     : Swept Above highs (equal high) | BEARISH BOS @ 9.1300 | Entry: Bearish OB +FVG [9.15 – 9.18] with FVG overlap | HTF 1h range | Zone: discount
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-05-01 21:00:15 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH MBOS @ 78131.0200
+  Signal     : SHORT 🔴
+  Entry zone : 77880.18 – 78313.16
+  Stop Loss  : 78741.78
+  Take Profit: 76806.45
+  Reason     : Swept Above highs (equal high) | BEARISH MBOS @ 78131.0200 | Entry: Bearish OB +FVG [78131.02 – 78584.61] with FVG overlap | HTF 4h bearish | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-05-01 21:30:11 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Above highs (equal high)
+  Structure  : BEARISH MBOS @ 78131.0200
+  Signal     : SHORT 🔴
+  Entry zone : 78064.85 – 78313.16
+  Stop Loss  : 78741.78
+  Take Profit: 77083.46
+  Reason     : Swept Above highs (equal high) | BEARISH MBOS @ 78131.0200 | Entry: Bearish OB +FVG [78131.02 – 78584.61] with FVG overlap | HTF 4h bearish | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-05-03 12:00:11 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 15m
+  Context    : Range
+  Liq sweep  : Below lows (equal low)
+  Structure  : BULLISH BOS @ 9.0800
+  Signal     : LONG 🟢
+  Entry zone : 9.06 – 9.08
+  Stop Loss  : 9.02
+  Take Profit: 9.17
+  Reason     : Swept Below lows (equal low) | BULLISH BOS @ 9.0800 | Entry: Bullish OB +FVG [9.04 – 9.06] with FVG overlap | HTF 1h bullish | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-05-04 02:30:09 UTC
+========================================================
+  Symbol     : SOL/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (equal low)
+  Structure  : BULLISH BOS @ 84.9700
+  Signal     : LONG 🟢
+  Entry zone : 83.91 – 84.74
+  Stop Loss  : 83.18
+  Take Profit: 86.61
+  Reason     : Swept Below lows (equal low) | BULLISH BOS @ 84.9700 | Entry: Bullish OB +FVG [83.35 – 83.91] with FVG overlap | HTF 4h range | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-05-04 03:00:13 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 1h
+  Context    : Bearish
+  Liq sweep  : Below lows (equal low)
+  Structure  : BULLISH BOS @ 9.1300
+  Signal     : LONG 🟢
+  Entry zone : 9.09 – 9.18
+  Stop Loss  : 8.97
+  Take Profit: 9.46
+  Reason     : Swept Below lows (equal low) | BULLISH BOS @ 9.1300 | Entry: Bullish OB +FVG [8.99 – 9.09] with FVG overlap | HTF 4h range | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-05-04 08:00:11 UTC
+========================================================
+  Symbol     : BNB/USDT
+  Timeframe  : 1h
+  Context    : Range
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 621.8100
+  Signal     : LONG 🟢
+  Entry zone : 617.54 – 621.81
+  Stop Loss  : 614.38
+  Take Profit: 639.81
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 621.8100 | Entry: Bullish OB +FVG [615.61 – 617.54] with FVG overlap | HTF 4h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-05-04 10:30:13 UTC
+========================================================
+  Symbol     : DOGE/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Above highs (high)
+  Structure  : BEARISH MBOS @ 0.1110
+  Signal     : SHORT 🔴
+  Entry zone : 0.11 – 0.11
+  Stop Loss  : 0.11
+  Take Profit: 0.11
+  Reason     : Swept Above highs (high) | BEARISH MBOS @ 0.1110 | Entry: Bearish OB [0.11 – 0.11] | HTF 4h range | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-05-04 12:00:12 UTC
+========================================================
+  Symbol     : XRP/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 1.3990
+  Signal     : LONG 🟢
+  Entry zone : 1.38 – 1.38
+  Stop Loss  : 1.37
+  Take Profit: 1.41
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 1.3990 | Entry: Bullish OB +FVG [1.37 – 1.38] with FVG overlap | HTF 4h bullish | Zone: equilibrium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-05-04 15:00:13 UTC
+========================================================
+  Symbol     : XRP/USDT
+  Timeframe  : 1h
+  Context    : Bullish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 1.3990
+  Signal     : LONG 🟢
+  Entry zone : 1.4 – 1.41
+  Stop Loss  : 1.39
+  Take Profit: 1.43
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 1.3990 | Entry: Bullish OB +FVG [1.39 – 1.40] with FVG overlap | HTF 4h bullish | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-05-04 17:30:15 UTC
+========================================================
+  Symbol     : AVAX/USDT
+  Timeframe  : 15m
+  Context    : Bullish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH MBOS @ 9.2400
+  Signal     : LONG 🟢
+  Entry zone : 9.16 – 9.19
+  Stop Loss  : 9.08
+  Take Profit: 9.36
+  Reason     : Swept Below lows (low) | BULLISH MBOS @ 9.2400 | Entry: Bullish OB +FVG [9.10 – 9.16] with FVG overlap | HTF 1h bullish | Zone: premium
+========================================================
+
+========================================================
+  SMC SIGNAL — 2026-05-05 13:30:11 UTC
+========================================================
+  Symbol     : BTC/USDT
+  Timeframe  : 15m
+  Context    : Bearish
+  Liq sweep  : Below lows (low)
+  Structure  : BULLISH BOS @ 81136.5900
+  Signal     : LONG 🟢
+  Entry zone : 81329.61 – 81418.81
+  Stop Loss  : 81029.91
+  Take Profit: 82062.82
+  Reason     : Swept Below lows (low) | BULLISH BOS @ 81136.5900 | Entry: Bullish OB +FVG [81192.29 – 81329.61] with FVG overlap | HTF 1h bullish | Zone: premium
+========================================================
+

@@ -274,3 +274,129 @@ def get_htf_confluence(symbol: str,
         htf_tf=htf_tf,
         reason=reason,
     )
+
+
+# ── Deep multi-layer HTF confluence ──────────────────────────────────────────
+
+# Multi-level HTF map: each TF maps to a list of context TFs from nearest to furthest
+# Used for layered bias scoring (nearer HTF = more weight)
+DEEP_HTF_MAP: dict[str, list[tuple[str, int]]] = {
+    # (timeframe, weight_pts)
+    "5m":  [("15m", 10), ("1h",  10), ("4h",  5)],
+    "15m": [("1h",  12), ("4h",  8),  ("1d",  5)],
+    "30m": [("4h",  12), ("1d",  8),  ("1w",  5)],
+    "1h":  [("4h",  12), ("1d",  8),  ("1w",  5)],
+    "2h":  [("4h",  10), ("1d",  8),  ("1w",  7)],
+    "4h":  [("1d",  12), ("1w",  8),  ("1M",  5)],
+    "8h":  [("1d",  10), ("1w",  8),  ("1M",  7)],
+    "1d":  [("1w",  12), ("1M",  13)],
+    "1w":  [("1M",  25)],
+}
+
+
+class DeepHTFResult:
+    """
+    Multi-layer HTF confluence result.
+
+    total_pts      : total alignment score across all HTF layers (0-25)
+    aligned_layers : list of (tf, bias, pts) that aligned with signal
+    opposing_layers: list of (tf, bias, pts) that opposed signal
+    neutral_layers : list of (tf, bias, pts) that were range/neutral
+    hard_opposing  : True if ANY layer directly opposes (for mandatory block)
+    summary        : human-readable string
+    """
+    def __init__(self):
+        self.total_pts       = 0
+        self.aligned_layers  = []
+        self.opposing_layers = []
+        self.neutral_layers  = []
+        self.hard_opposing   = False
+        self.summary         = ""
+
+    def __repr__(self):
+        return (f"<DeepHTF pts={self.total_pts} "
+                f"aligned={[t for t,_,_ in self.aligned_layers]} "
+                f"opposing={[t for t,_,_ in self.opposing_layers]}>")
+
+
+def get_deep_htf_confluence(symbol: str,
+                             signal_direction: str,
+                             signal_timeframe: str,
+                             deep_map: dict | None = None) -> DeepHTFResult:
+    """
+    Multi-layer HTF bias check.
+
+    Instead of checking just ONE HTF level, this checks 2-3 levels:
+      e.g. for 1h signal:
+        1h  → check 4h   (weight 12 pts)  — immediate structure
+        1h  → check 1d   (weight 8 pts)   — medium-term bias
+        1h  → check 1w   (weight 5 pts)   — macro trend
+
+    Rules:
+      - Each aligned layer adds its weight
+      - Each opposing layer subtracts its weight
+      - Neutral (range) = 0 pts for that layer
+      - hard_opposing = True if ANY layer is directly opposing
+        (used by confirmation.py to decide mandatory block)
+      - Total is capped at 25 pts (same as old single-layer HTF weight)
+
+    This gives more nuance: a signal can be partially aligned
+    (4h bullish but 1d bearish) rather than binary pass/fail.
+    """
+    from datafeed import fetch_ohlcv
+
+    mapping = deep_map or DEEP_HTF_MAP
+    layers  = mapping.get(signal_timeframe, [])
+
+    result = DeepHTFResult()
+
+    if not layers:
+        # Fallback to single-layer for TFs not in map
+        single = get_htf_confluence(symbol, signal_direction, signal_timeframe)
+        if single:
+            pts = 25 if single.aligned else (0 if single.opposing else 10)
+            result.total_pts = pts
+            result.hard_opposing = single.opposing
+            result.summary = single.reason
+        return result
+
+    descriptions = []
+    raw_total = 0
+
+    for htf_tf, weight in layers:
+        try:
+            df_htf = fetch_ohlcv(symbol, htf_tf, limit=150)
+            if df_htf.empty:
+                descriptions.append(f"{htf_tf}: unavailable")
+                continue
+        except Exception:
+            descriptions.append(f"{htf_tf}: fetch error")
+            continue
+
+        df_htf = find_swings(df_htf)
+        bias   = get_market_context(df_htf)
+
+        if signal_direction == "long":
+            aligned  = bias == "bullish"
+            opposing = bias == "bearish"
+        else:
+            aligned  = bias == "bearish"
+            opposing = bias == "bullish"
+
+        if aligned:
+            raw_total += weight
+            result.aligned_layers.append((htf_tf, bias, weight))
+            descriptions.append(f"{htf_tf}:{bias}✅(+{weight})")
+        elif opposing:
+            raw_total -= weight
+            result.opposing_layers.append((htf_tf, bias, weight))
+            result.hard_opposing = True
+            descriptions.append(f"{htf_tf}:{bias}❌(-{weight})")
+        else:
+            result.neutral_layers.append((htf_tf, bias, 0))
+            descriptions.append(f"{htf_tf}:{bias}⚪(0)")
+
+    # Cap total at 25 (same max as old single-layer)
+    result.total_pts = max(0, min(25, raw_total))
+    result.summary   = " | ".join(descriptions)
+    return result

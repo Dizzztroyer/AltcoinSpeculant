@@ -93,6 +93,7 @@ class ModelConfig:
     # "zero"   = expired always counts as 0R (conservative, recommended)
     # "market" = mark-to-market at last close price
     expired_treatment:     str   = "zero"
+    _extra:                dict  = None    # extra config patches for this model
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -207,6 +208,41 @@ MODEL_REGISTRY: dict[str, ModelConfig] = {
         block_htf_range=True,
         pd_mandatory=True,
         expired_treatment="zero",
+    ),
+
+    "G": ModelConfig(
+        id="G", name="Baseline + Single HTF",
+        description="Same as Model A but with single-layer HTF disabled. "
+                    "Use as control group vs Model H (deep multi-layer HTF).",
+        allow_fvg_only=False,
+        require_ob=True,
+        allow_equilibrium=True,
+        premium_discount_only=False,
+        min_score=75,
+        block_htf_range=True,
+        pd_mandatory=True,
+        expired_treatment="zero",
+        _extra={"DEEP_HTF_ENABLED": False},
+    ),
+
+    "H": ModelConfig(
+        id="H", name="Balanced + Deep HTF (4h+1d+1w)",
+        description="Model F logic + deep multi-layer HTF. "
+                    "1h signals require alignment on 4h + 1d + 1w.",
+        allow_fvg_only=False,
+        require_ob=True,
+        require_fresh_ob=True,
+        require_displacement=True,
+        max_bars_after_bos=20,
+        allow_equilibrium=False,
+        premium_discount_only=False,
+        min_score=80,
+        bos_min_body_atr=1.0,
+        sweep_wick_dominance=0.60,
+        block_htf_range=True,
+        pd_mandatory=True,
+        expired_treatment="zero",
+        _extra={"DEEP_HTF_ENABLED": True},
     ),
 }
 
@@ -356,6 +392,12 @@ def scan_with_model(symbol: str, timeframe: str,
 
     # Patch config with model params
     _orig = {}
+    # Apply model-specific extra config overrides (e.g. DEEP_HTF_ENABLED)
+    extra_patches = model._extra or {}
+    for k, v in extra_patches.items():
+        _orig[k] = getattr(config, k, None)
+        setattr(config, k, v)
+
     patches = {
         "CONFIRMATION_MIN_SCORE":          model.min_score,
         "CONFIRMATION_HTF_MANDATORY":      model.htf_mandatory,
@@ -454,6 +496,121 @@ def _model_post_filter(sig: dict, model: ModelConfig,
 # TRADE EVALUATOR
 # ══════════════════════════════════════════════════════════════════════════════
 
+# ── Cascade ambiguity resolver ────────────────────────────────────────────────
+
+# Cascade: each TF maps to the next smaller TF to try
+_AMBIGUITY_CASCADE: dict[str, list[str]] = {
+    "1d":  ["4h", "1h", "15m"],
+    "8h":  ["2h", "1h", "15m"],
+    "4h":  ["1h", "30m", "15m"],
+    "2h":  ["30m", "15m", "5m"],
+    "1h":  ["15m", "5m"],
+    "30m": ["5m", "1m"],
+    "15m": ["5m", "1m"],
+    "5m":  ["1m"],
+}
+
+_ambiguity_cache: dict[str, str] = {}   # (sym, ts_str, tf_ltf) → "won"|"lost"
+
+
+def _resolve_ambiguity(symbol: str,
+                       candle_ts,
+                       direction: str,
+                       signal_tf: str,
+                       stop_loss: float,
+                       take_profit: float,
+                       mid_entry: float) -> tuple[str, bool]:
+    """
+    Try to determine which was hit first (SL or TP) inside an ambiguous candle
+    by fetching smaller TF data for that time window.
+
+    Returns (outcome, resolved):
+      outcome  : "won" | "lost"
+      resolved : True if a smaller TF gave an unambiguous answer,
+                 False if we fell back to the conservative close-price rule
+    """
+    if not getattr(config, "CASCADE_AMBIGUITY_ENABLED", True):
+        return _conservative_outcome(direction, mid_entry,
+                                     stop_loss, take_profit), False
+
+    cascade = _AMBIGUITY_CASCADE.get(signal_tf, [])
+    ts_str  = str(candle_ts)
+
+    for ltf in cascade:
+        cache_key = f"{symbol}|{ts_str}|{ltf}"
+        if cache_key in _ambiguity_cache:
+            return _ambiguity_cache[cache_key], True
+
+        try:
+            from datafeed import fetch_ohlcv
+            df_ltf = fetch_ohlcv(symbol, ltf, limit=50)
+            if df_ltf.empty:
+                continue
+
+            # Filter to candles that fall WITHIN the ambiguous HTF candle
+            # timestamp is the OPEN time of the candle
+            import pandas as pd
+            ts_dt = pd.to_datetime(candle_ts, utc=True)
+            tf_minutes = _tf_to_minutes(signal_tf)
+            window_end = ts_dt + pd.Timedelta(minutes=tf_minutes)
+
+            within = df_ltf[
+                (df_ltf["timestamp"] >= ts_dt) &
+                (df_ltf["timestamp"] <  window_end)
+            ].reset_index(drop=True)
+
+            if within.empty:
+                continue
+
+            # Walk LTF candles in order
+            for _, lc in within.iterrows():
+                lh, ll, lc_close = lc["high"], lc["low"], lc["close"]
+                ltp = (direction == "long"  and lh >= take_profit) or \
+                      (direction == "short" and ll <= take_profit)
+                lsl = (direction == "long"  and ll <= stop_loss) or \
+                      (direction == "short" and lh >= stop_loss)
+
+                if ltp and not lsl:
+                    _ambiguity_cache[cache_key] = "won"
+                    log_info(f"[AMBIG] resolved via {ltf}: TP hit first")
+                    return "won", True
+                if lsl and not ltp:
+                    _ambiguity_cache[cache_key] = "lost"
+                    log_info(f"[AMBIG] resolved via {ltf}: SL hit first")
+                    return "lost", True
+                if ltp and lsl:
+                    continue   # still ambiguous at this LTF — try next in cascade
+
+        except Exception as exc:
+            log_warn(f"[AMBIG] {ltf} fetch failed: {exc}")
+            continue
+
+    # All cascade TFs exhausted — fall back to conservative rule
+    outcome = _conservative_outcome(direction, mid_entry, stop_loss, take_profit)
+    log_info(f"[AMBIG] cascade exhausted → conservative: {outcome}")
+    return outcome, False
+
+
+def _conservative_outcome(direction: str, mid_entry: float,
+                           stop_loss: float, take_profit: float) -> str:
+    """
+    Fallback: if close > mid_entry for long → assume TP hit first (optimistic
+    would be wrong; we use: which exit is CLOSER to entry mid = hit first).
+    """
+    dist_tp = abs(take_profit - mid_entry)
+    dist_sl = abs(stop_loss   - mid_entry)
+    if dist_sl <= dist_tp:
+        return "lost"    # SL is closer → likely hit first
+    return "won"
+
+
+def _tf_to_minutes(tf: str) -> int:
+    mapping = {"1m":1,"3m":3,"5m":5,"15m":15,"30m":30,
+               "1h":60,"2h":120,"4h":240,"8h":480,
+               "1d":1440,"1w":10080,"1M":43200}
+    return mapping.get(tf, 60)
+
+
 def evaluate_trade(sig: dict, future: pd.DataFrame,
                    signal_bar: int, model: ModelConfig) -> BacktestTrade | None:
     """Walk future candles to determine trade outcome."""
@@ -478,7 +635,6 @@ def evaluate_trade(sig: dict, future: pd.DataFrame,
     best = worst = mid_entry
 
     for offset, (_, candle) in enumerate(future.iterrows()):
-        o = candle.get("open", candle["close"])
         h = candle["high"]
         l = candle["low"]
         c = candle["close"]
@@ -533,13 +689,15 @@ def evaluate_trade(sig: dict, future: pd.DataFrame,
                  (direction == "short" and h >= stop_loss)
 
         if tp_hit and sl_hit:
-            outcome = _resolve_intrabar_collision(
+            # Ambiguous candle — try to resolve via lower TF cascade
+            outcome, resolved = _resolve_ambiguity(
+                symbol=sig.get("symbol", ""),
+                candle_ts=candle["timestamp"],
                 direction=direction,
-                candle_open=o,
-                candle_close=c,
-                entry_price=mid_entry,
+                signal_tf=sig.get("timeframe", "1h"),
                 stop_loss=stop_loss,
                 take_profit=take_profit,
+                mid_entry=mid_entry,
             )
             exit_price = take_profit if outcome == "won" else stop_loss
             exit_bar   = bar_abs
@@ -562,7 +720,7 @@ def evaluate_trade(sig: dict, future: pd.DataFrame,
             pnl_r = ((ep - mid_entry) / price_risk if direction == "long"
                      else (mid_entry - ep) / price_risk)
     elif outcome == "won":
-        pnl_r = abs((exit_price or mid_entry) - mid_entry) / price_risk
+        pnl_r = config.DEFAULT_RR_RATIO
     else:
         pnl_r = -1.0
 
@@ -595,35 +753,6 @@ def evaluate_trade(sig: dict, future: pd.DataFrame,
         mae         = round(mae, 3),
         signal_time = str(sig.get("_bar_time", "")),
     )
-
-
-def _resolve_intrabar_collision(direction: str,
-                                candle_open: float,
-                                candle_close: float,
-                                entry_price: float,
-                                stop_loss: float,
-                                take_profit: float) -> str:
-    """
-    Resolve candles where both TP and SL are inside the same bar.
-
-    Default to conservative handling because OHLC data does not provide
-    the true intrabar path.
-    """
-    policy = getattr(config, "BACKTEST_INTRABAR_POLICY", "conservative")
-
-    if policy == "optimistic":
-        return "won"
-    if policy == "close_bias":
-        if (direction == "long" and candle_close > entry_price) or (
-            direction == "short" and candle_close < entry_price
-        ):
-            return "won"
-        return "lost"
-    if policy == "open_distance":
-        tp_distance = abs(take_profit - candle_open)
-        sl_distance = abs(candle_open - stop_loss)
-        return "won" if tp_distance < sl_distance else "lost"
-    return "lost"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -674,20 +803,19 @@ def run_all(models:     list[ModelConfig],
             days:       int = 180,
             walk_step:  int = 2) -> list[BacktestResult]:
     """Run all models on all symbol/timeframe combinations."""
-    from datafeed import fetch_ohlcv
+    from datafeed import fetch_full_history
 
-    # Fetch data once, reuse across models
+    # Fetch data once, reuse across models.
+    # fetch_full_history uses paginated requests so `days` is respected
+    # regardless of Binance's 1000-candle-per-request limit.
     data_cache: dict[tuple, pd.DataFrame] = {}
-    bars_per_day = {"1m":1440,"5m":288,"15m":96,"30m":48,"1h":24,"4h":6,"1d":1}
 
     for sym in symbols:
         for tf in timeframes:
-            needed = min(days * bars_per_day.get(tf, 24) + 150, 1000)
-            log_info(f"[BT] fetching {sym} [{tf}] {needed} candles ...")
-            df = fetch_ohlcv(sym, tf, limit=needed)
+            log_info(f"[BT] fetching {sym} [{tf}] {days}d history (paginated) ...")
+            df = fetch_full_history(sym, tf, days=days)
             if not df.empty:
                 data_cache[(sym, tf)] = df
-            time_mod.sleep(0.3)
 
     all_results: list[BacktestResult] = []
 
@@ -1021,11 +1149,7 @@ def _model_detail_html(r: BacktestResult, color: str) -> str:
 
 def _sig_hash(sig: dict) -> str:
     import hashlib
-    key = (
-        f"{sig['symbol']}|{sig['timeframe']}|{sig['direction']}|"
-        f"{round(sig['entry_low'], 2)}|{round(sig['entry_high'], 2)}|"
-        f"{sig.get('_bar_time', '')}"
-    )
+    key = f"{sig['symbol']}|{sig['timeframe']}|{sig['direction']}|{round(sig['entry_low'],2)}|{round(sig['entry_high'],2)}"
     return hashlib.md5(key.encode()).hexdigest()[:10]
 
 
@@ -1072,7 +1196,7 @@ def main() -> None:
 
     print_comparison(results)
 
-    if args.html:
+    if args.html or True:  # always generate HTML
         import webbrowser
         from pathlib import Path
         path = generate_html(results, output=args.out)
