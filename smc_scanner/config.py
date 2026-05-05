@@ -8,30 +8,34 @@ API_SECRET = ""
 
 # ── B. Scanner settings ───────────────────────────────────────────────────────
 SYMBOLS = [
-    "BTC/USDT",
-    "ETH/USDT",
-    "SOL/USDT",
-    "BNB/USDT",
-    # Added symbols
-    "XRP/USDT",
-    "AVAX/USDT",
-    "DOGE/USDT",
+    # Tier 1 — high WR in backtest, keep always
+    "BTC/USDT",    # 60% WR on 1h
+    "ETH/USDT",    # 55% WR on 1h
+    "BNB/USDT",    # 50% WR
+    "DOGE/USDT",   # 67% WR (small sample, watch)
+    # Tier 2 — added back for sample size; revisit after 200+ trades
+    "XRP/USDT",    # 25% WR was on 15m (broken TF) — test on 1h/4h
+    "SOL/USDT",    # 20% WR was on 15m — retest on higher TF
+    # Removed: AVAX/USDT (10% WR, broken on all TFs)
+    "LINK/USDT",   #это сам уже добавил
 ]
 
-TIMEFRAMES = ["15m", "1h"]
+TIMEFRAMES = ["15m", "30m", "1h", "2h", "4h", "8h", "1d"]   # 15m removed (15% WR), 4h added for structure clarity
 
 # Higher-timeframe map used by scoring
 HTF_MAP = {
     "1m":  "15m",
     "5m":  "15m",
     "15m": "1h",
-    "30m": "4h",
+    "30m": "1h",   # лучше чем 4h (слишком далеко было)
     "1h":  "4h",
+    "2h":  "4h",
     "4h":  "1d",
+    "8h":  "1d",
     "1d":  "1w",
 }
 
-CANDLE_LIMIT          = 1000
+CANDLE_LIMIT          = 300   # increased for 4h context depth
 SCAN_INTERVAL_MINUTES = 30    # run every 30 minutes, aligned to :00 and :30
 
 SWING_LOOKBACK    = 5
@@ -52,7 +56,7 @@ SIGNAL_EXPIRY_HOURS       = 48
 EVALUATION_LOOKAHEAD_BARS = 100
 
 # ── E. Scoring settings ───────────────────────────────────────────────────────
-ALERT_SCORE_THRESHOLD = 60
+ALERT_SCORE_THRESHOLD = 75
 MIN_RR_FOR_BONUS      = 2.0
 STRONG_RR_BONUS       = 2.5
 
@@ -66,9 +70,8 @@ DEDUP_LOOKBACK_HOURS = 6
 
 # ── H. Telegram alerts ────────────────────────────────────────────────────────
 TELEGRAM_ENABLED   = True
-TELEGRAM_BOT_TOKEN = "8*********17qzEr3KLhNmfIjLIVq9LA"
-TELEGRAM_CHAT_ID   = "-10**********089"
-
+TELEGRAM_BOT_TOKEN = "8639493835:AAGl7b8ybl4E417qzEr3KLhNmfIjLIVq9LA"
+TELEGRAM_CHAT_ID   = "-1003716382089"
 # ── Output ────────────────────────────────────────────────────────────────────
 SHOW_CHART = False
 LOG_FILE   = "signals.log"
@@ -106,14 +109,14 @@ RISK_PER_TRADE_PCT   = 0.01    # 1% risk per trade
 
 # ── K. Multi-layer confirmation engine ────────────────────────────────────────
 # Minimum total score to allow a trade (0-100)
-CONFIRMATION_MIN_SCORE           = 70
+CONFIRMATION_MIN_SCORE           = 75   # 70-74 had 29% WR so raise, but 80 gives too few trades
 
 # Hard block flags — set False to downgrade from hard-block to score penalty
 CONFIRMATION_HTF_MANDATORY       = True   # block if HTF opposes
 CONFIRMATION_SWEEP_MANDATORY     = True   # block if sweep is low quality
 CONFIRMATION_BOS_MANDATORY       = True   # block if BOS is weak
 CONFIRMATION_OB_MANDATORY        = True   # block if no OB or FVG found
-CONFIRMATION_PD_MANDATORY        = False  # premium/discount (softer)
+CONFIRMATION_PD_MANDATORY        = True   # MANDATORY: SHORT only in premium/eq, LONG only in discount/eq
 CONFIRMATION_LIQ_TARGET_MANDATORY = False # liquidity target (softer)
 
 # Sweep quality thresholds
@@ -125,38 +128,33 @@ BOS_MIN_BODY_ATR_RATIO    = 0.8    # BOS body must be >= 0.8× ATR
 # Premium/Discount zone boundaries
 # price at < PD_DISCOUNT_LEVEL → discount zone (good for longs)
 # price at > PD_PREMIUM_LEVEL  → premium zone  (good for shorts)
-PD_DISCOUNT_LEVEL         = 0.35   # lower 35% of range
-PD_PREMIUM_LEVEL          = 0.65   # upper 35% of range
+PD_DISCOUNT_LEVEL         = 0.40   # lower 40% = discount zone (longs only)
+PD_PREMIUM_LEVEL          = 0.60   # upper 40% = premium zone (shorts only)
+# Equilibrium = 40-60% = allowed for both directions but no bonus
 
 # Minimum distance from current price to liquidity target
 CONFIRMATION_MIN_TARGET_DISTANCE = 0.005  # 0.5% minimum
-# ── Q. Multi-layer HTF context ────────────────────────────────────────────────
-# DEEP_HTF_ENABLED: check 2-3 HTF layers instead of one
-#   True  = 1h signal checks 4h + 1d + 1w (proportional scoring)
-#   False = original behaviour (single HTF from HTF_MAP)
-DEEP_HTF_ENABLED = True
+# ── L. Kill Zones ─────────────────────────────────────────────────────────────
+# Modes:
+#   "log"    — always allow, but log KZ status to console (safe to start with)
+#   "filter" — block signals outside KZ (strict, fewer signals)
+#   "score"  — affect scoring only (+10 inside, -5 outside), no hard block
+#   "off"    — completely disabled
+KILLZONE_MODE = "log"
 
-# Extended HTF map for deep multi-layer analysis
-# Structure: signal_tf → [(htf_tf, weight_pts), ...]
-# Total weights per row should sum to ~25 (max HTF score)
-# Nearest HTF gets highest weight (most immediate structure)
-DEEP_HTF_MAP = {
-    "5m":  [("15m", 10), ("1h",  10), ("4h",  5)],
-    "15m": [("1h",  12), ("4h",  8),  ("1d",  5)],
-    "30m": [("4h",  12), ("1d",  8),  ("1w",  5)],
-    "1h":  [("4h",  12), ("1d",  8),  ("1w",  5)],
-    "2h":  [("4h",  10), ("1d",  8),  ("1w",  7)],
-    "4h":  [("1d",  12), ("1w",  8),  ("1M",  5)],
-    "8h":  [("1d",  10), ("1w",  8),  ("1M",  7)],
-    "1d":  [("1w",  12), ("1M",  13)],
-    "1w":  [("1M",  25)],
-}
+# ── M. Backtesting ────────────────────────────────────────────────────────────
+BACKTEST_DAYS       = 90    # default lookback period in days
+BACKTEST_WALK_STEP  = 3     # bars to advance per iteration (higher = faster)
 
-# ── R. Cascade ambiguity resolution ──────────────────────────────────────────
-# When SL and TP both fall in the same candle, try to resolve via lower TF.
-#   True  = fetch smaller TF data to determine which was hit first
-#   False = use conservative close-price rule (original behaviour)
-CASCADE_AMBIGUITY_ENABLED = True
+# ── N. Trailing stop ──────────────────────────────────────────────────────────
+# Once price moves TRAILING_STOP_TRIGGER_R in our favour,
+# move stop to breakeven. Prevents -1R losses on trades that moved 1R+ our way.
+# Set to 0 to disable.
+TRAILING_STOP_ENABLED   = True
+TRAILING_STOP_TRIGGER_R = 1.0    # move SL to BE when price reaches +1R
+TRAILING_STOP_LOCK_R    = 0.0    # lock in 0R (breakeven) when triggered
 
-# How many TF levels to try before falling back to conservative rule
-CASCADE_MAX_DEPTH = 3
+# ── O. Backtest settings ──────────────────────────────────────────────────────
+BACKTEST_DAYS       = 180   # 6 months for statistical validity (need 50+ trades)
+BACKTEST_WALK_STEP  = 2     # bars per iteration (lower = more signals caught)
+BACKTEST_INTRABAR_POLICY = "conservative"  # conservative | optimistic | close_bias | open_distance
